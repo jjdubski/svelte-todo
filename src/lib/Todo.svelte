@@ -49,6 +49,17 @@
 	let editRecurring = $state('');
 	let showSubtasks = $state(false);
 	let editSubtasks = $state([]);
+	let showAddSubtask = $state(false);
+	let newSubtaskText = $state('');
+
+	function addInlineSubtask() {
+		const text = newSubtaskText.trim();
+		if (!text) return;
+		const subtasks = [...(todo.subtasks || []), { text, done: false }];
+		updateTodo(todo.id, { subtasks });
+		newSubtaskText = '';
+		showSubtasks = true;
+	}
 
 	function formatDate(dateStr) {
 		if (!dateStr) return '';
@@ -125,22 +136,22 @@
 
 {#if editing}
 	<form class="todo-edit flex flex-col gap-2 rounded-xl p-3.5" transition:scale={{ duration: prefersReducedMotion ? 0 : 200, easing: elasticOut }}>
-		<input bind:value={editTitle} placeholder="Title" class="w-full px-3 py-2.5 rounded-lg border text-sm" />
-		<textarea bind:value={editDescription} placeholder="Description" rows="2" class="w-full px-3 py-2.5 rounded-lg border text-sm min-h-[60px] resize-vertical"></textarea>
+		<input bind:value={editTitle} placeholder="Title" class="w-full px-3 py-2.5 rounded-lg border text-base" />
+		<textarea bind:value={editDescription} placeholder="Description" rows="2" class="w-full px-3 py-2.5 rounded-lg border text-base min-h-[60px] resize-vertical"></textarea>
 		<div class="form-inline flex gap-2 flex-wrap">
-			<input type="date" bind:value={editDueDate} aria-label="Due date" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-sm" />
-			<select bind:value={editPriority} aria-label="Priority" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-sm">
+			<input type="date" bind:value={editDueDate} aria-label="Due date" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-base" />
+			<select bind:value={editPriority} aria-label="Priority" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-base">
 				<option value="high">High</option>
 				<option value="medium">Medium</option>
 				<option value="low">Low</option>
 			</select>
-			<select bind:value={editCategory} aria-label="Category" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-sm">
+			<select bind:value={editCategory} aria-label="Category" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-base">
 				<option value="">No category</option>
 				{#each categories as cat (cat)}
 					<option value={cat}>{cat}</option>
 				{/each}
 			</select>
-			<select bind:value={editRecurring} aria-label="Recurring" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-sm">
+			<select bind:value={editRecurring} aria-label="Recurring" class="flex-1 min-w-20 px-3 py-2.5 rounded-lg border text-base">
 				<option value="">One-time</option>
 				<option value="daily">Daily</option>
 				<option value="weekly">Weekly</option>
@@ -153,7 +164,7 @@
 			{#each availableTags as tag (tag)}
 				<button
 					type="button"
-					class="tag-toggle px-2 py-0.5 rounded-full text-[0.7rem] font-semibold border cursor-pointer"
+					class="tag-toggle px-2 py-0.5 rounded-full text-xs font-semibold border cursor-pointer"
 					class:selected={editTags.includes(tag)}
 					style="--tag-color: {tagColors[tag]}"
 					onclick={() => editTags = editTags.includes(tag) ? editTags.filter(t => t !== tag) : [...editTags, tag]}
@@ -164,7 +175,7 @@
 		</div>
 
 		<div class="subtasks-editor mt-1">
-			<button type="button" class="text-btn bg-none border-none text-xs cursor-pointer p-1" onclick={addEditSubtask}>
+			<button type="button" class="text-btn bg-none border-none text-sm cursor-pointer p-1" onclick={addEditSubtask}>
 				+ Add subtask
 			</button>
 			{#each editSubtasks as subtask, i (i)}
@@ -179,7 +190,7 @@
 						type="text"
 						bind:value={editSubtasks[i].text}
 						placeholder="Subtask {i + 1}"
-						class="flex-1 px-2 py-1.5 text-xs rounded-md border"
+						class="flex-1 px-2 py-1.5 text-sm rounded-md border"
 					/>
 					<button type="button" class="icon-btn tiny w-6 h-6 flex items-center justify-center border-none rounded p-0" onclick={() => removeEditSubtask(i)}>
 						<X size={12} />
@@ -196,7 +207,7 @@
 {:else}
 	<div
 		role="listitem"
-		class="todo-card flex gap-3 items-stretch rounded-xl border p-4"
+		class="todo-card flex gap-2 items-start rounded-xl border p-3"
 		class:completed={todo.completed}
 		class:dragging={draggedId === todo.id}
 		class:drag-over={dragOverId === todo.id}
@@ -209,112 +220,145 @@
 	>
 		{#if selectMode}
 			<button
-				class="select-check flex items-center justify-center bg-none border-none cursor-pointer p-1 rounded"
+				class="select-check flex items-center justify-center bg-none border-none cursor-pointer p-0.5 rounded shrink-0 self-start mt-0.5"
 				onclick={() => toggleSelect(todo.id)}
 				aria-label={selectedTodos.has(todo.id) ? 'Deselect' : 'Select'}
 			>
 				{#if selectedTodos.has(todo.id)}
-					<CheckSquare size={20} />
+					<CheckSquare size={18} />
 				{:else}
-					<Square size={20} />
+					<Square size={18} />
 				{/if}
 			</button>
 		{/if}
 
 		{#if sortBy === 'manual' && !selectMode}
-			<div class="drag-handle cursor-grab flex flex-col gap-[2.5px] p-[0.35rem_0.15rem_0.35rem_0] shrink-0 select-none self-center" aria-label="Drag to reorder">
+			<div class="drag-handle cursor-grab flex flex-col gap-[2px] p-[0.25rem_0.1rem_0.25rem_0] shrink-0 select-none self-start mt-1" aria-label="Drag to reorder">
 				<span></span><span></span><span></span>
 			</div>
 		{/if}
 
-		<div class="todo-body flex-1 min-w-0 flex flex-col gap-1">
-			<div class="todo-header flex items-center gap-2 flex-wrap">
+		<div class="todo-body flex-1 min-w-0">
+			<div class="flex items-start gap-2">
 				<input
 					type="checkbox"
-					class="todo-check w-[18px] h-[18px] cursor-pointer shrink-0"
+					class="todo-check w-[18px] h-[18px] cursor-pointer shrink-0 mt-0.5"
 					checked={todo.completed}
 					onchange={() => toggleTodo(todo.id)}
 					aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
 				/>
-				<h3 class="todo-title m-0 text-base font-medium">{todo.title}</h3>
-
-				<span class="priority-badge inline-block px-1.5 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wider text-white priority-{todo.priority || 'medium'}">
-					{todo.priority || 'medium'}
-				</span>
-
-				{#if todo.category && categories.includes(todo.category)}
-					<span class="category-badge inline-block px-1.5 py-0.5 rounded-full text-[0.65rem] font-semibold text-white" style="background: {categoryColors[todo.category]};">
-						{todo.category}
-					</span>
-				{/if}
-
-				{#if todo.recurring}
-					<span class="recurring-badge inline-flex items-center justify-center w-5 h-5 rounded-full" style="background: var(--btn-edit); color: white;" title="Recurring {todo.recurring}">
-						<Repeat size={12} />
-					</span>
-				{/if}
-			</div>
-
-			{#if todo.description}
-				<p class="todo-desc m-0 text-sm leading-relaxed">{todo.description}</p>
-			{/if}
-
-			{#if todo.tags && todo.tags.length > 0}
-				<div class="todo-tags flex flex-wrap gap-1.5 mt-1">
-					{#each todo.tags as tag (tag)}
-						<span class="tag-badge inline-block px-1 py-0.5 rounded-full text-[0.65rem] font-semibold text-white" style="background: {tagColors[tag]};">
-							{tag}
+				<div class="flex-1 min-w-0">
+					<div class="flex items-center gap-1.5 flex-wrap">
+						<h3 class="todo-title m-0 text-base font-medium leading-snug">{todo.title}</h3>
+						<span class="flex gap-1 items-center shrink-0 ml-auto">
+							<span class="priority-badge inline-block px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider text-white priority-{todo.priority || 'medium'}">
+								{todo.priority || 'medium'}
+							</span>
+							{#if todo.category && categories.includes(todo.category)}
+<span class="category-badge inline-block px-1.5 py-0.5 rounded-full text-xs font-semibold text-white" style="background: {categoryColors[todo.category]};">
+									{todo.category}
+								</span>
+							{/if}
+							{#if todo.recurring}
+								<span class="recurring-badge inline-flex items-center justify-center w-4 h-4 rounded-full" style="background: var(--btn-edit); color: white;" title="Recurring {todo.recurring}">
+									<Repeat size={10} />
+								</span>
+							{/if}
 						</span>
-					{/each}
-				</div>
-			{/if}
+					</div>
 
-			{#if totalSubtasks > 0}
-				<button class="subtasks-preview inline-flex items-center gap-1 bg-none border-none text-xs cursor-pointer p-1" onclick={toggleSubtasksView}>
-					{#if showSubtasks}
-						<ChevronDown size={14} />
-					{:else}
-						<ChevronRight size={14} />
+					{#if todo.description}
+						<p class="todo-desc m-0 text-sm leading-relaxed mt-0.5" style="color: var(--text-muted);">{todo.description}</p>
 					{/if}
-					<span>{completedSubtasks}/{totalSubtasks} subtasks</span>
-				</button>
-			{/if}
 
-			{#if showSubtasks && todo.subtasks && todo.subtasks.length > 0}
-				<div class="subtasks-list flex flex-col gap-1 pl-4 border-l-2 mt-1" transition:slide={{ duration: prefersReducedMotion ? 0 : 150 }}>
-					{#each todo.subtasks as subtask, i (i)}
-						<div class="subtask-item flex items-center gap-2 text-sm" class:done={subtask.done}>
-							<input
-								type="checkbox"
-								checked={subtask.done}
-								class="w-[14px] h-[14px]"
-								onchange={() => {
-									subtask.done = !subtask.done;
-									updateTodo(todo.id, { subtasks: todo.subtasks });
-								}}
-							/>
-							<span>{subtask.text}</span>
+					{#if todo.tags && todo.tags.length > 0}
+						<div class="flex flex-wrap gap-1 mt-1">
+							{#each todo.tags as tag (tag)}
+								<span class="inline-block px-1.5 py-0.5 rounded-full text-xs font-semibold text-white" style="background: {tagColors[tag]};">
+									{tag}
+								</span>
+							{/each}
 						</div>
-					{/each}
+					{/if}
+
+					<div class="flex items-center gap-2 mt-1 flex-wrap">
+						{#if totalSubtasks > 0}
+							<button class="subtasks-preview inline-flex items-center gap-0.5 bg-none border-none text-sm cursor-pointer p-0.5" onclick={toggleSubtasksView}>
+								{#if showSubtasks}
+									<ChevronDown size={12} />
+								{:else}
+									<ChevronRight size={12} />
+								{/if}
+								<span>{completedSubtasks}/{totalSubtasks}</span>
+							</button>
+						{/if}
+						<button
+							class="inline-flex items-center gap-0.5 bg-none border-none text-sm cursor-pointer p-0.5"
+							style="color: var(--text-muted);"
+							onclick={() => showAddSubtask = !showAddSubtask}
+						>
+							+ Subtask
+						</button>
+						<span class="flex items-center gap-1 ml-auto">
+							{#if todo.dueDate}
+								<span class="text-sm font-medium" style="color: {isOverdue(todo.dueDate) ? 'var(--priority-high)' : 'var(--text-muted)'};">
+									{formatDate(todo.dueDate)}
+								</span>
+							{/if}
+							<button onclick={startEdit} class="flex items-center justify-center border-0 rounded-md p-1 cursor-pointer" style="color: var(--text-muted);" aria-label="Edit task">
+								<Edit2 size={13} />
+							</button>
+							<button onclick={() => deleteTodo(todo.id)} class="flex items-center justify-center border-0 rounded-md p-1 cursor-pointer" style="color: var(--text-muted);" aria-label="Delete task">
+								<Trash2 size={13} />
+							</button>
+						</span>
+					</div>
+
+					{#if showSubtasks && todo.subtasks && todo.subtasks.length > 0}
+						<div class="flex flex-col gap-0.5 pl-3 border-l-2 mt-1" transition:slide={{ duration: prefersReducedMotion ? 0 : 150 }} style="border-color: var(--border);">
+							{#each todo.subtasks as subtask, i (i)}
+								<div class="subtask-item flex items-center gap-1.5 text-sm py-0.5" class:done={subtask.done}>
+									<input
+										type="checkbox"
+										checked={subtask.done}
+										class="w-[13px] h-[13px]"
+										onchange={() => {
+											subtask.done = !subtask.done;
+											updateTodo(todo.id, { subtasks: todo.subtasks });
+										}}
+									/>
+									<span style="color: var(--text-secondary);">{subtask.text}</span>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					{#if showAddSubtask}
+						<div class="flex gap-1.5 items-center mt-1" transition:slide={{ duration: prefersReducedMotion ? 0 : 100 }}>
+							<input
+								type="text"
+								class="flex-1 px-2 py-1 text-sm rounded-md"
+								style="border: 1px solid var(--border); background: var(--input-bg); color: var(--text);"
+								bind:value={newSubtaskText}
+								placeholder="Add a subtask..."
+								onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addInlineSubtask(); } }}
+							/>
+							<button
+								class="px-2 py-1 text-sm font-medium border-none rounded-md cursor-pointer text-white"
+								style="background: var(--btn-save);"
+								onclick={addInlineSubtask}
+							>Add</button>
+							<button
+								class="px-2 py-1 text-xs font-medium border-none rounded-md cursor-pointer text-white"
+								style="background: var(--btn-cancel);"
+								onclick={() => { showAddSubtask = false; newSubtaskText = ''; }}
+							>
+								<X size={12} />
+							</button>
+						</div>
+					{/if}
 				</div>
-			{/if}
-
-			<div class="todo-meta flex gap-1.5 flex-wrap items-center mt-1">
-				{#if todo.dueDate}
-					<p class="todo-due m-0 text-xs font-medium" class:overdue={isOverdue(todo.dueDate)}>
-						{formatDate(todo.dueDate)}
-					</p>
-				{/if}
 			</div>
-		</div>
-
-		<div class="todo-actions flex flex-col gap-1.5 shrink-0 justify-start">
-			<button onclick={startEdit} class="btn btn-edit flex items-center justify-center border-0 rounded-lg p-1 font-semibold text-xs cursor-pointer text-white" aria-label="Edit task">
-				<Edit2 size={14} />
-			</button>
-			<button onclick={() => deleteTodo(todo.id)} class="btn btn-delete flex items-center justify-center border-0 rounded-lg p-1 font-semibold text-xs cursor-pointer text-white" aria-label="Delete task">
-				<Trash2 size={14} />
-			</button>
 		</div>
 	</div>
 {/if}
@@ -400,22 +444,6 @@
 		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 	}
 
-	.btn-edit {
-		background: var(--btn-edit);
-	}
-
-	.btn-edit:hover {
-		background: var(--btn-edit-hover);
-	}
-
-	.btn-delete {
-		background: var(--btn-delete);
-	}
-
-	.btn-delete:hover {
-		background: var(--btn-delete-hover);
-	}
-
 	.tags-editor {
 		color: var(--text-muted);
 	}
@@ -465,6 +493,12 @@
 		color: var(--text-secondary);
 	}
 
+	.todo-card [aria-label="Edit task"]:hover,
+	.todo-card [aria-label="Delete task"]:hover {
+		background: var(--todo-bg);
+		color: var(--text-heading) !important;
+	}
+
 	.select-check {
 		color: var(--text-muted);
 	}
@@ -472,11 +506,6 @@
 	.select-check:hover {
 		color: var(--btn-primary);
 		background: var(--input-bg);
-	}
-
-	.todo-due.overdue {
-		color: var(--priority-high);
-		font-weight: 700;
 	}
 
 	.tag-toggle:hover {

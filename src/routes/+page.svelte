@@ -97,7 +97,6 @@
 	let newTags = $state([]);
 	let newCustomTag = $state('');
 	let newRecurring = $state('');
-	let newSubtasks = $state([{ text: '', done: false }]);
 
 	// Filter/Sort state
 	let filterText = $state('');
@@ -180,7 +179,7 @@
 		newCategory = '';
 		newTags = [];
 		newRecurring = '';
-		newSubtasks = [{ text: '', done: false }];
+		newSubtasks = [];
 		selectedTemplate = 'None';
 	}
 
@@ -193,7 +192,7 @@
 		newCategory = template.category;
 		newTags = [...template.tags];
 		newRecurring = '';
-		newSubtasks = [{ text: '', done: false }];
+		newSubtasks = [];
 	}
 
 	$effect(() => {
@@ -561,40 +560,12 @@
 					</div>
 				</div>
 
-				<!-- Subtasks -->
-				{#if newSubtasks.some(s => s.text)}
-					<div class="mb-3">
-						{#each newSubtasks as subtask, i (i)}
-							{#if subtask.text}
-								<div class="flex gap-2 items-center mb-2">
-									<input
-										type="text"
-										class="flex-1 px-3 py-2 text-sm rounded-lg"
-										style="border: 1px solid var(--border); background: var(--input-bg); color: var(--text);"
-										bind:value={newSubtasks[i].text}
-										placeholder="Subtask"
-									/>
-									<button class="w-7 h-7 flex items-center justify-center border-none rounded" style="background: var(--btn-delete); color: white;" data-btn="delete" onclick={() => removeSubtask(i)} aria-label="Remove subtask">
-										<X size={14} />
-									</button>
-								</div>
-							{/if}
-						{/each}
-					</div>
-				{/if}
 
-				<div class="flex gap-3 items-center">
-					<button class="flex items-center gap-1.5 px-4 py-3 rounded-xl border border-dashed text-sm cursor-pointer"
-						style="border-color: var(--border); color: var(--text-muted); transition: all 0.2s;" data-btn="ghost"
-						onclick={addSubtask} type="button">
-						<Plus size={14} /> Add subtask
-					</button>
-					<button type="button" class="flex items-center justify-center gap-1.5 flex-1 px-4 py-3.5 border-none rounded-xl font-semibold text-base cursor-pointer"
-						style="background: var(--btn-primary); color: white; transition: all 0.2s;" data-btn="primary"
-						onclick={add}>
-						<Plus size={16} /> Add Task
-					</button>
-				</div>
+				<button type="button" class="flex items-center w-full justify-center gap-1.5 flex-1 px-4 py-3.5 border-none rounded-xl font-semibold text-base cursor-pointer"
+					style="background: var(--btn-primary); color: white; transition: all 0.2s;" data-btn="primary"
+					onclick={add}>
+					<Plus size={16} /> Add Task
+				</button>
 			</div>
 		{:else}
 			<button class="flex items-center justify-center gap-2 w-full p-4 rounded-xl border border-dashed cursor-pointer mb-6"
