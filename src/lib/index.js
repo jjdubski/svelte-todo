@@ -1,1 +1,2 @@
-// place files you want to import through the `$lib` alias in this folder.
+// Re-export store helpers for convenient access
+export { getTodoStore, createTodoStore } from '$lib/todoStore.svelte.js';

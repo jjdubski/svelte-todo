@@ -1,7 +1,7 @@
 <script>
 	import { slide } from 'svelte/transition';
 	import { scale } from 'svelte/transition';
-	import { elasticOut, cubicOut } from 'svelte/easing';
+	import { elasticOut } from 'svelte/easing';
 	import {
 		GripVertical,
 		Edit2,
@@ -15,29 +15,12 @@
 		CheckSquare,
 		Square
 	} from 'lucide-svelte';
+	import { getTodoStore } from '$lib/todoStore.svelte.js';
 
-	let {
-		todo,
-		updateTodo,
-		deleteTodo,
-		toggleTodo,
-		categories,
-		categoryColors,
-		availableTags,
-		tagColors,
-		sortBy,
-		handleDragStart,
-		handleDragEnd,
-		handleDragOver,
-		handleDragLeave,
-		handleDrop,
-		draggedId = null,
-		dragOverId = null,
-		selectMode = false,
-		selectedTodos = new Set(),
-		toggleSelect,
-		prefersReducedMotion = false
-	} = $props();
+	/** @type {import('./todoStore.svelte.js').Todo} */
+	let { todo } = $props();
+
+	const store = getTodoStore();
 
 	let editing = $state(false);
 	let editTitle = $state('');
@@ -56,7 +39,7 @@
 		const text = newSubtaskText.trim();
 		if (!text) return;
 		const subtasks = [...(todo.subtasks || []), { text, done: false }];
-		updateTodo(todo.id, { subtasks });
+		store.updateTodo(todo.id, { subtasks });
 		newSubtaskText = '';
 		showSubtasks = true;
 	}
@@ -94,7 +77,7 @@
 	}
 
 	function save() {
-		updateTodo(todo.id, {
+		store.updateTodo(todo.id, {
 			title: editTitle,
 			description: editDescription,
 			dueDate: editDueDate,
@@ -137,7 +120,7 @@
 {#if editing}
 	<form
 		class="todo-edit flex flex-col gap-2 rounded-xl p-3.5"
-		transition:scale={{ duration: prefersReducedMotion ? 0 : 200, easing: elasticOut }}
+		transition:scale={{ duration: store.prefersReducedMotion ? 0 : 200, easing: elasticOut }}
 	>
 		<input
 			bind:value={editTitle}
@@ -172,7 +155,7 @@
 				class="min-w-20 flex-1 rounded-lg border px-3 py-2.5 text-base"
 			>
 				<option value="">No category</option>
-				{#each categories as cat (cat)}
+				{#each store.categories as cat (cat)}
 					<option value={cat}>{cat}</option>
 				{/each}
 			</select>
@@ -190,12 +173,12 @@
 
 		<div class="tags-editor flex flex-wrap items-center gap-2">
 			<Tag size={14} />
-			{#each availableTags as tag (tag)}
+			{#each store.availableTags as tag (tag)}
 				<button
 					type="button"
 					class="glow-tag tag-toggle cursor-pointer rounded-full border px-2 py-0.5 text-xs font-semibold"
 					class:selected={editTags.includes(tag)}
-					style="--tag-color: {tagColors[tag]}"
+					style="--tag-color: {store.tagColors[tag]}"
 					onclick={() =>
 						(editTags = editTags.includes(tag)
 							? editTags.filter((t) => t !== tag)
@@ -259,22 +242,22 @@
 		role="listitem"
 		class="glow-card todo-card flex items-start gap-2 rounded-xl border p-3"
 		class:completed={todo.completed}
-		class:dragging={draggedId === todo.id}
-		class:drag-over={dragOverId === todo.id}
-		draggable={sortBy === 'manual'}
-		ondragstart={(e) => handleDragStart(e, todo.id)}
-		ondragend={handleDragEnd}
-		ondragover={(e) => handleDragOver(e, todo.id)}
-		ondragleave={handleDragLeave}
-		ondrop={(e) => handleDrop(e, todo.id)}
+		class:dragging={store.draggedId === todo.id}
+		class:drag-over={store.dragOverId === todo.id}
+		draggable={store.sortBy === 'manual'}
+		ondragstart={(e) => store.handleDragStart(e, todo.id)}
+		ondragend={() => store.handleDragEnd()}
+		ondragover={(e) => store.handleDragOver(e, todo.id)}
+		ondragleave={() => store.handleDragLeave()}
+		ondrop={(e) => store.handleDrop(e, todo.id)}
 	>
-		{#if selectMode}
+		{#if store.selectMode}
 			<button
 				class="select-check mt-0.5 flex shrink-0 cursor-pointer items-center justify-center self-start rounded border-none bg-none p-0.5"
-				onclick={() => toggleSelect(todo.id)}
-				aria-label={selectedTodos.has(todo.id) ? 'Deselect' : 'Select'}
+				onclick={() => store.toggleSelect(todo.id)}
+				aria-label={store.selectedTodos.has(todo.id) ? 'Deselect' : 'Select'}
 			>
-				{#if selectedTodos.has(todo.id)}
+				{#if store.selectedTodos.has(todo.id)}
 					<CheckSquare size={18} />
 				{:else}
 					<Square size={18} />
@@ -282,7 +265,7 @@
 			</button>
 		{/if}
 
-		{#if sortBy === 'manual' && !selectMode}
+		{#if store.sortBy === 'manual' && !store.selectMode}
 			<div
 				class="drag-handle mt-1 flex shrink-0 cursor-grab flex-col gap-[2px] self-start p-[0.25rem_0.1rem_0.25rem_0] select-none"
 				aria-label="Drag to reorder"
@@ -297,7 +280,7 @@
 					type="checkbox"
 					class="todo-check mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer"
 					checked={todo.completed}
-					onchange={() => toggleTodo(todo.id)}
+					onchange={() => store.toggleTodo(todo.id)}
 					aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
 				/>
 				<div class="min-w-0 flex-1">
@@ -310,10 +293,10 @@
 							>
 								{todo.priority || 'medium'}
 							</span>
-							{#if todo.category && categories.includes(todo.category)}
+							{#if todo.category && store.categories.includes(todo.category)}
 								<span
 									class="category-badge inline-block rounded-full px-1.5 py-0.5 text-xs font-semibold text-white"
-									style="background: {categoryColors[todo.category]};"
+									style="background: {store.categoryColors[todo.category]};"
 								>
 									{todo.category}
 								</span>
@@ -344,7 +327,7 @@
 							{#each todo.tags as tag (tag)}
 								<span
 									class="inline-block rounded-full px-1.5 py-0.5 text-xs font-semibold text-white"
-									style="background: {tagColors[tag]};"
+									style="background: {store.tagColors[tag]};"
 								>
 									{tag}
 								</span>
@@ -393,7 +376,7 @@
 								<Edit2 size={13} />
 							</button>
 							<button
-								onclick={() => deleteTodo(todo.id)}
+								onclick={() => store.deleteTodo(todo.id)}
 								class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
 								style="color: var(--text-muted);"
 								aria-label="Delete task"
@@ -406,7 +389,7 @@
 					{#if showSubtasks && todo.subtasks && todo.subtasks.length > 0}
 						<div
 							class="mt-1 flex flex-col gap-0.5 border-l-2 pl-3"
-							transition:slide={{ duration: prefersReducedMotion ? 0 : 150 }}
+							transition:slide={{ duration: store.prefersReducedMotion ? 0 : 150 }}
 							style="border-color: var(--border);"
 						>
 							{#each todo.subtasks as subtask, i (i)}
@@ -420,7 +403,7 @@
 										class="h-[13px] w-[13px]"
 										onchange={() => {
 											subtask.done = !subtask.done;
-											updateTodo(todo.id, { subtasks: todo.subtasks });
+											store.updateTodo(todo.id, { subtasks: todo.subtasks });
 										}}
 									/>
 									<span style="color: var(--text-secondary);">{subtask.text}</span>
@@ -432,7 +415,7 @@
 					{#if showAddSubtask}
 						<div
 							class="mt-1 flex items-center gap-1.5"
-							transition:slide={{ duration: prefersReducedMotion ? 0 : 100 }}
+							transition:slide={{ duration: store.prefersReducedMotion ? 0 : 100 }}
 						>
 							<input
 								type="text"

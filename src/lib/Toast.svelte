@@ -1,37 +1,38 @@
 <script>
 	import { RotateCcw, CheckCircle, Info, AlertTriangle } from 'lucide-svelte';
+	import { getTodoStore } from '$lib/todoStore.svelte.js';
 
-	let { message, type = 'info', undoDelete } = $props();
+	const store = getTodoStore();
 </script>
 
 <div class="fixed bottom-6 left-1/2 z-[1000] w-[min(90%,400px)] -translate-x-1/2">
 	<div
 		class="animate-toast-in flex items-center gap-3 rounded-xl border px-4 py-3.5 shadow-lg"
 		style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);"
-		class:success={type === 'success'}
-		class:info={type === 'info'}
-		class:warning={type === 'warning'}
+		class:success={store.toast.type === 'success'}
+		class:info={store.toast.type === 'info'}
+		class:warning={store.toast.type === 'warning'}
 	>
 		<div
 			class="shrink-0"
-			class:text-green-500={type === 'success'}
-			class:text-red-500={type === 'warning'}
-			class:text-blue-500={type === 'info'}
+			class:text-green-500={store.toast.type === 'success'}
+			class:text-red-500={store.toast.type === 'warning'}
+			class:text-blue-500={store.toast.type === 'info'}
 		>
-			{#if type === 'success'}
+			{#if store.toast.type === 'success'}
 				<CheckCircle size={18} style="color: var(--btn-save);" />
-			{:else if type === 'warning'}
+			{:else if store.toast.type === 'warning'}
 				<AlertTriangle size={18} style="color: var(--priority-high);" />
 			{:else}
 				<Info size={18} style="color: var(--btn-primary);" />
 			{/if}
 		</div>
-		<span class="flex-1 text-sm" style="color: var(--text);">{message}</span>
-		{#if type === 'info' && undoDelete}
+		<span class="flex-1 text-sm" style="color: var(--text);">{store.toast.message}</span>
+		{#if store.toast.type === 'info' && store.lastDeletedTodo}
 			<button
 				class="flex cursor-pointer items-center gap-1 rounded-md border-none px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap"
 				style="background: var(--btn-primary); color: white; transition: background 0.2s;"
-				onclick={undoDelete}
+				onclick={() => store.undoDelete()}
 				data-btn="primary"
 			>
 				<RotateCcw size={14} /> Undo

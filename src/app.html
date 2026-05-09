@@ -9,6 +9,17 @@
 			href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap"
 			rel="stylesheet"
 		/>
+		<!-- Dark mode preload: reads localStorage / prefers-color-scheme BEFORE first paint to eliminate FOUC -->
+		<script>
+			try {
+				var d = localStorage.getItem('darkMode');
+				if (d !== null) {
+					if (JSON.parse(d)) document.documentElement.classList.add('dark');
+				} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.documentElement.classList.add('dark');
+				}
+			} catch (e) {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

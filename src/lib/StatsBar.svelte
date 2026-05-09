@@ -1,25 +1,26 @@
 <script>
 	import { spring } from 'svelte/motion';
+	import { getTodoStore } from '$lib/todoStore.svelte.js';
 
-	let { stats, prefersReducedMotion = false } = $props();
+	const store = getTodoStore();
 
 	let activeSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
 	let completedSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
 	let overdueSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
 
 	$effect(() => {
-		if (!prefersReducedMotion) {
-			activeSpring.set(stats.active);
+		if (!store.prefersReducedMotion) {
+			activeSpring.set(store.stats.active);
 		}
 	});
 	$effect(() => {
-		if (!prefersReducedMotion) {
-			completedSpring.set(stats.completed);
+		if (!store.prefersReducedMotion) {
+			completedSpring.set(store.stats.completed);
 		}
 	});
 	$effect(() => {
-		if (!prefersReducedMotion) {
-			overdueSpring.set(stats.overdue);
+		if (!store.prefersReducedMotion) {
+			overdueSpring.set(store.stats.overdue);
 		}
 	});
 </script>
@@ -30,21 +31,21 @@
 >
 	<div class="flex flex-1 flex-col items-center p-4">
 		<span class="text-2xl font-bold" style="color: var(--text-heading); line-height: 1;"
-			>{prefersReducedMotion ? stats.active : Math.round($activeSpring)}</span
+			>{store.prefersReducedMotion ? store.stats.active : Math.round($activeSpring)}</span
 		>
 		<span class="mt-1 text-sm" style="color: var(--text-muted);">Active</span>
 	</div>
 	<div class="w-px self-stretch" style="background: var(--border);"></div>
 	<div class="flex flex-1 flex-col items-center p-4">
 		<span class="text-2xl font-bold" style="color: var(--text-heading); line-height: 1;"
-			>{prefersReducedMotion ? stats.completed : Math.round($completedSpring)}</span
+			>{store.prefersReducedMotion ? store.stats.completed : Math.round($completedSpring)}</span
 		>
 		<span class="mt-1 text-sm" style="color: var(--text-muted);">Completed</span>
 	</div>
 	<div class="w-px self-stretch" style="background: var(--border);"></div>
 	<div class="flex flex-1 flex-col items-center p-4">
 		<span class="text-2xl font-bold" style="color: var(--priority-high); line-height: 1;"
-			>{prefersReducedMotion ? stats.overdue : Math.round($overdueSpring)}</span
+			>{store.prefersReducedMotion ? store.stats.overdue : Math.round($overdueSpring)}</span
 		>
 		<span class="mt-1 text-sm" style="color: var(--text-muted);">Overdue</span>
 	</div>
