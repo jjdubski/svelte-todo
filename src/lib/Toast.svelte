@@ -1,5 +1,5 @@
 <script>
-	import { RotateCcw, CheckCircle, Info, AlertTriangle } from 'lucide-svelte';
+	import { CheckCircle, Info, AlertTriangle } from 'lucide-svelte';
 	import { getTodoStore } from '$lib/todoStore.svelte.js';
 
 	const store = getTodoStore();
@@ -31,16 +31,6 @@
 			{/if}
 		</div>
 		<span class="flex-1 text-sm" style="color: var(--text);">{store.toast.message}</span>
-		{#if store.toast.type === 'info' && store.lastDeletedTodo}
-			<button
-				class="flex cursor-pointer items-center gap-1 rounded-md border-none px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap"
-				style="background: var(--btn-primary); color: white; transition: background 0.2s;"
-				onclick={() => store.undoDelete()}
-				data-btn="primary"
-			>
-				<RotateCcw size={14} /> Undo
-			</button>
-		{/if}
 	</div>
 </div>
 

@@ -6,36 +6,13 @@
 
 	const store = getTodoStore();
 
-	// Local subtask state — managed entirely in this component
-	// This fixes the bug where `newSubtasks` was declared at page level and
-	// referenced by `add()` but reset in `resetForm()`.
-	let newSubtasks = $state([]);
-
-	function addSubtask() {
-		newSubtasks = [...newSubtasks, { text: '', done: false }];
-	}
-
-	function removeSubtask(index) {
-		newSubtasks = newSubtasks.filter((_, i) => i !== index);
-	}
-
 	function handleAdd() {
-		store.addFromForm(newSubtasks);
-		newSubtasks = [];
+		store.addFromForm();
 	}
 
 	function handleTemplate(template) {
 		store.applyTemplate(template);
-		newSubtasks = [];
 	}
-
-	$effect(() => {
-		// When form is reset (e.g. after add), also clear local subtasks
-		if (!store.newTitle && !store.newDescription && store.selectedTemplate === 'None') {
-			// Only clear if the store was just reset (not if user manually cleared title)
-			// We track this via the selectedTemplate being 'None' after an add
-		}
-	});
 </script>
 
 {#if store.showForm}
@@ -183,39 +160,6 @@
 					+
 				</button>
 			</div>
-		</div>
-
-		<!-- Subtask management -->
-		<div class="mb-3">
-			<button
-				type="button"
-				class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-3 py-1.5 text-sm font-medium"
-				style="color: var(--btn-primary);"
-				onclick={addSubtask}
-			>
-				+ Add subtask
-			</button>
-			{#each newSubtasks as subtask, i (i)}
-				<div class="mt-1 flex items-center gap-2">
-					<input
-						type="text"
-						bind:value={newSubtasks[i].text}
-						placeholder="Subtask {i + 1}"
-						class="flex-1 rounded-md border px-2 py-1.5 text-sm"
-						style="border: 1px solid var(--border-input); background: var(--input-bg); color: var(--text);"
-						aria-label="Subtask {i + 1} text"
-					/>
-					<button
-						type="button"
-						class="flex h-6 w-6 cursor-pointer items-center justify-center rounded border-none p-0 text-white"
-						style="background: var(--btn-delete);"
-						onclick={() => removeSubtask(i)}
-						aria-label="Remove subtask"
-					>
-						×
-					</button>
-				</div>
-			{/each}
 		</div>
 
 		<button

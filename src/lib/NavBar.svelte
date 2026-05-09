@@ -29,11 +29,12 @@
 			</a>
 		{/each}
 	</div>
-	<button
-		class="glow-btn absolute right-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border text-base"
-		style="background: var(--todo-bg); border-color: var(--border); color: var(--text-secondary);"
-		data-btn="ghost"
+	<span
+		class="absolute right-4 cursor-pointer"
 		onclick={() => (store.darkMode = !store.darkMode)}
+		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (store.darkMode = !store.darkMode)}
+		role="button"
+		tabindex="0"
 		aria-label={store.darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 	>
 		{#if store.darkMode}
@@ -41,7 +42,7 @@
 		{:else}
 			<Moon size={20} />
 		{/if}
-	</button>
+	</span>
 </nav>
 
 <style>

@@ -47,6 +47,8 @@ class TodoStore {
 	// ── Todos ──
 	/** @type {Todo[]} */
 	todos = $state([]);
+	/** @type {Todo[]} */
+	archivedTodos = $state([]);
 
 	// ── Categories ──
 	/** @type {string[]} */
@@ -151,8 +153,6 @@ class TodoStore {
 
 	// ── Toast ──
 	toast = $state({ show: false, message: '', type: 'success' });
-	/** @type {Todo|null} */
-	lastDeletedTodo = $state(null);
 
 	// ── Dark mode ──
 	darkMode = $state(false);
@@ -226,9 +226,10 @@ class TodoStore {
 		this._init();
 		this._checkReducedMotion();
 
-		// Effect: recompute stats, upcoming due, and save todos whenever todos changes
+		// Effect: recompute stats, upcoming due, and save todos + archivedTodos
 		$effect(() => {
 			const t = this.todos;
+			const a = this.archivedTodos;
 			this.stats = this._computeStats(t);
 			this.filteredTodos = this._computeFiltered(t);
 			this.upcomingDueTasks = this._computeUpcomingDue(t);
@@ -238,6 +239,7 @@ class TodoStore {
 			this.categoryBreakdown = this._computeCategoryBreakdown(t);
 			this.overdueTasks = this._computeOverdueTasks(t);
 			storageSet('todos', t);
+			storageSet('archivedTodos', a);
 		});
 
 		// Effect: recompute filteredTodos when filters/sort change
@@ -335,6 +337,10 @@ class TodoStore {
 		if (saved && Array.isArray(saved) && saved.length > 0) {
 			this.todos = saved;
 			this.nextId = Math.max(...saved.map((t) => t.id)) + 1;
+		}
+		const archivedSaved = storageGet('archivedTodos');
+		if (archivedSaved && Array.isArray(archivedSaved)) {
+			this.archivedTodos = archivedSaved;
 		}
 		this.darkMode = this._getInitialDarkMode();
 		this.isLoading = false;
@@ -671,41 +677,41 @@ class TodoStore {
 	deleteTodo(id) {
 		const index = this.todos.findIndex((t) => t.id === id);
 		if (index !== -1) {
-			const { id: _id, ...rest } = this.todos[index];
-			this.lastDeletedTodo = { items: [{ todo: { ...rest, id: _id }, index }] };
-			this.todos = this.todos.filter((t) => t.id !== id);
-			this.showToast('Task deleted', 'info');
+			const [todo] = this.todos.splice(index, 1);
+			this.archivedTodos = [...this.archivedTodos, todo];
+			this.showToast('Task archived', 'info');
 		}
 	}
 
-	undoDelete() {
-		const items = this.lastDeletedTodo?.items;
-		if (items && items.length > 0) {
-			// Sort by index ascending to splice in order
-			const sorted = [...items].sort((a, b) => a.index - b.index);
-			for (const item of sorted) {
-				this.todos.splice(item.index, 0, item.todo);
-			}
-			this.todos = [...this.todos];
-			this.lastDeletedTodo = null;
-			const label = items.length === 1 ? 'Task restored' : `${items.length} tasks restored`;
-			this.showToast(label, 'success');
+	/**
+	 * @param {number} id
+	 */
+	restoreTodo(id) {
+		const index = this.archivedTodos.findIndex((t) => t.id === id);
+		if (index !== -1) {
+			const [todo] = this.archivedTodos.splice(index, 1);
+			this.todos = [...this.todos, todo];
+			this.showToast('Task restored', 'success');
+		}
+	}
+
+	/**
+	 * @param {number} id
+	 */
+	permanentDeleteTodo(id) {
+		const index = this.archivedTodos.findIndex((t) => t.id === id);
+		if (index !== -1) {
+			this.archivedTodos.splice(index, 1);
+			this.showToast('Task permanently deleted', 'info');
 		}
 	}
 
 	deleteSelected() {
 		const count = this.selectedTodos.size;
-		const deleted = this.todos.filter((t) => this.selectedTodos.has(t.id));
-		const items = deleted.map((t) => {
-			const idx = this.todos.indexOf(t);
-			const { id: _id, ...rest } = t;
-			return { todo: { ...rest, id: _id }, index: idx };
-		});
+		const archived = this.todos.filter((t) => this.selectedTodos.has(t.id));
 		this.todos = this.todos.filter((t) => !this.selectedTodos.has(t.id));
-		if (items.length > 0) {
-			this.lastDeletedTodo = { items };
-		}
-		this.showToast(`${count} tasks deleted`, 'info');
+		this.archivedTodos = [...this.archivedTodos, ...archived];
+		this.showToast(`${count} tasks archived`, 'info');
 		this.selectedTodos = new SvelteSet();
 		this.selectMode = false;
 	}
