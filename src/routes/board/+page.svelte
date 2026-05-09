@@ -252,13 +252,16 @@
 												{formatDate(todo.dueDate)}
 											</p>
 										{/if}
+									</div>
+
+									<div class="flex items-center self-stretch">
 										<button
 											onclick={() => store.deleteTodo(todo.id)}
-											class="mt-1 flex cursor-pointer items-center gap-0.5 rounded border-none p-0.5 text-xs"
+											class="flex cursor-pointer items-center gap-0.5 rounded border-none p-0.5 text-xs"
 											style="color: var(--text-muted);"
 											aria-label="Archive task"
 										>
-											<Archive size={12} />
+											<Archive size={16} />
 										</button>
 									</div>
 								</div>

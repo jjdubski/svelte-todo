@@ -11,8 +11,7 @@
 		Repeat,
 		Tag,
 		CheckSquare,
-		Square,
-		Share2
+		Square
 	} from 'lucide-svelte';
 	import { getTodoStore } from '$lib/todoStore.svelte.js';
 	import { renderMarkdown } from '$lib/markdown.js';
@@ -109,36 +108,6 @@
 
 	function toggleSubtasksView() {
 		showSubtasks = !showSubtasks;
-	}
-
-	// ── Share task ──
-	async function handleShare() {
-		const shareUrl = window.location.href.split('?')[0] + '?task=' + todo.id;
-		const shareData = {
-			title: todo.title,
-			text: todo.description || '',
-			url: shareUrl
-		};
-		if (navigator.share) {
-			try {
-				await navigator.share(shareData);
-			} catch (e) {
-				if (e.name !== 'AbortError') {
-					copyToClipboard(shareUrl);
-				}
-			}
-		} else {
-			copyToClipboard(shareUrl);
-		}
-	}
-
-	async function copyToClipboard(text) {
-		try {
-			await navigator.clipboard.writeText(text);
-			store.showToast('Link copied to clipboard', 'success');
-		} catch {
-			store.showToast('Could not copy link', 'warning');
-		}
 	}
 
 	let completedSubtasks = $derived(todo.subtasks?.filter((s) => s.done).length || 0);
@@ -340,36 +309,44 @@
 							{/if}
 							{#if todo.recurring}
 								<span
-									class="recurring-badge inline-flex h-4 w-4 items-center justify-center rounded-full"
+									class="recurring-badge inline-flex h-6 w-6 items-center justify-center rounded-full"
 									style="background: var(--btn-edit); color: white;"
 									title="Recurring {todo.recurring}"
 								>
-									<Repeat size={10} />
+									<Repeat size={20} />
 								</span>
 							{/if}
 						</span>
 					</div>
 
-					{#if todo.description}
-						<div class="markdown-content m-0 mt-0.5 text-base leading-relaxed">
-							{@html renderMarkdown(todo.description)}
+					{#if todo.description || (todo.tags && todo.tags.length > 0)}
+						<div class="mt-1 ml-2 flex items-start gap-2" class:justify-end={!todo.description}>
+							{#if todo.description}
+								<div class="markdown-content min-w-0 flex-1 text-base leading-relaxed">
+									{@html renderMarkdown(todo.description)}
+								</div>
+							{:else}
+								<div class="flex-1" style="color: var(--text-muted);">
+									<p style="font-style: italic;">No details</p>
+								</div>
+							{/if}
+
+							{#if todo.tags && todo.tags.length > 0}
+								<div class="mt-1 flex shrink-0 flex-wrap gap-1">
+									{#each todo.tags as tag (tag)}
+										<span
+											class="inline-block rounded-full px-1.5 py-0.5 text-sm font-semibold text-white"
+											style="background: {store.tagColors[tag]};"
+										>
+											{tag}
+										</span>
+									{/each}
+								</div>
+							{/if}
 						</div>
 					{/if}
 
-					{#if todo.tags && todo.tags.length > 0}
-						<div class="mt-1 flex flex-wrap gap-1">
-							{#each todo.tags as tag (tag)}
-								<span
-									class="inline-block rounded-full px-1.5 py-0.5 text-sm font-semibold text-white"
-									style="background: {store.tagColors[tag]};"
-								>
-									{tag}
-								</span>
-							{/each}
-						</div>
-					{/if}
-
-					<div class="mt-1 flex flex-wrap items-center gap-2">
+					<div class="flex flex-wrap items-center gap-2">
 						{#if totalSubtasks > 0}
 							<button
 								class="subtasks-preview inline-flex cursor-pointer items-center gap-0.5 border-none bg-none p-0.5 text-base"
@@ -402,16 +379,8 @@
 								</span>
 							{/if}
 							<button
-								onclick={handleShare}
-								class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
-								style="color: var(--text-muted);"
-								aria-label="Share task"
-							>
-								<Share2 size={16} />
-							</button>
-							<button
 								onclick={startEdit}
-								class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
+								class="glow-btn mt-2 flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
 								style="color: var(--text-muted);"
 								aria-label="Edit task"
 							>
@@ -419,7 +388,7 @@
 							</button>
 							<button
 								onclick={() => store.deleteTodo(todo.id)}
-								class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
+								class="glow-btn mt-2 flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
 								style="color: var(--text-muted);"
 								aria-label="Archive task"
 							>

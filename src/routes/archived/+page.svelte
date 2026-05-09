@@ -30,7 +30,7 @@
 			<div class="flex flex-col gap-2">
 				{#each store.archivedTodos as todo (todo.id)}
 					<div
-						class="archived-card flex items-start gap-3 rounded-xl border p-3"
+						class="archived-card flex items-stretch gap-3 rounded-xl border p-3"
 						style="background: var(--todo-bg); border-color: var(--border);"
 					>
 						<div class="min-w-0 flex-1">
@@ -84,7 +84,7 @@
 								</div>
 							{/if}
 						</div>
-						<div class="flex shrink-0 flex-col gap-1.5">
+						<div class="flex shrink-0 flex-col justify-around">
 							<button
 								class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-3 py-1.5 text-sm font-semibold text-white"
 								style="background: var(--btn-save);"

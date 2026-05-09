@@ -234,14 +234,14 @@ class TodoStore {
 		$effect(() => {
 			const t = this.todos;
 			const a = this.archivedTodos;
-			this.stats = this._computeStats(t);
+			this.stats = this._computeStats([...t, ...a]);
 			this.filteredTodos = this._computeFiltered(t);
 			this.upcomingDueTasks = this._computeUpcomingDue(t);
-			this.streak = this._computeStreak(t);
-			this.completionsByDay = this._computeCompletionsByDay(t);
+			this.streak = this._computeStreak([...t, ...a]);
+			this.completionsByDay = this._computeCompletionsByDay([...t, ...a]);
 			this.priorityDistribution = this._computePriorityDistribution(t);
-			this.categoryBreakdown = this._computeCategoryBreakdown(t);
-			this.overdueTasks = this._computeOverdueTasks(t);
+			this.categoryBreakdown = this._computeCategoryBreakdown([...t, ...a]);
+			this.overdueTasks = this._computeOverdueTasks([...t, ...a]);
 			storageSet('todos', t);
 			storageSet('archivedTodos', a);
 		});
