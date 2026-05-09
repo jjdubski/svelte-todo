@@ -1,5 +1,4 @@
 <script>
-	import { Sun, Moon } from 'lucide-svelte';
 	import { getTodoStore } from '$lib/todoStore.svelte.js';
 
 	const store = getTodoStore();
@@ -12,19 +11,6 @@
 	>
 		Todo List
 	</h1>
-	<button
-		class="glow-btn absolute right-0 flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border"
-		style="background: var(--todo-bg); border-color: var(--border); color: var(--text-secondary);"
-		data-btn="ghost"
-		onclick={() => (store.darkMode = !store.darkMode)}
-		aria-label={store.darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-	>
-		{#if store.darkMode}
-			<Sun size={20} />
-		{:else}
-			<Moon size={20} />
-		{/if}
-	</button>
 </div>
 
 <!-- Shortcut hint moved here from footer -->
