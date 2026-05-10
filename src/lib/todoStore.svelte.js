@@ -204,6 +204,21 @@ class TodoStore {
 		}
 	}
 
+	// ── Edit modal state ──
+	/** @type {number|null} */
+	editingTodoId = $state(null);
+
+	/**
+	 * @param {number} id
+	 */
+	startEdit(id) {
+		this.editingTodoId = id;
+	}
+
+	cancelEdit() {
+		this.editingTodoId = null;
+	}
+
 	// ── Drag and drop ──
 	/** @type {number|null} */
 	draggedId = $state(null);

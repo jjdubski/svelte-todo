@@ -1,7 +1,5 @@
 <script>
 	import { slide } from 'svelte/transition';
-	import { scale } from 'svelte/transition';
-	import { elasticOut } from 'svelte/easing';
 	import {
 		Edit2,
 		Archive,
@@ -9,7 +7,6 @@
 		ChevronDown,
 		ChevronRight,
 		Repeat,
-		Tag,
 		CheckSquare,
 		Square
 	} from 'lucide-svelte';
@@ -21,16 +18,7 @@
 
 	const store = getTodoStore();
 
-	let editing = $state(false);
-	let editTitle = $state('');
-	let editDescription = $state('');
-	let editDueDate = $state('');
-	let editPriority = $state('');
-	let editCategory = $state('');
-	let editTags = $state([]);
-	let editRecurring = $state('');
 	let showSubtasks = $state(false);
-	let editSubtasks = $state([]);
 	let showAddSubtask = $state(false);
 	let newSubtaskText = $state('');
 
@@ -64,49 +52,6 @@
 		return dateStr < today && !todo.completed;
 	}
 
-	function startEdit() {
-		editing = true;
-		editTitle = todo.title;
-		editDescription = todo.description || '';
-		editDueDate = todo.dueDate || '';
-		editPriority = todo.priority || 'medium';
-		editCategory = todo.category || '';
-		editTags = [...(todo.tags || [])];
-		editRecurring = todo.recurring || '';
-		editSubtasks = todo.subtasks ? [...todo.subtasks] : [];
-	}
-
-	function save() {
-		store.updateTodo(todo.id, {
-			title: editTitle,
-			description: editDescription,
-			dueDate: editDueDate,
-			priority: editPriority,
-			category: editCategory,
-			tags: editTags,
-			recurring: editRecurring,
-			subtasks: editSubtasks.filter((s) => s.text.trim())
-		});
-		editing = false;
-	}
-
-	function cancel() {
-		editing = false;
-	}
-
-	function toggleSubtask(index) {
-		editSubtasks[index].done = !editSubtasks[index].done;
-		editSubtasks = [...editSubtasks];
-	}
-
-	function addEditSubtask() {
-		editSubtasks = [...editSubtasks, { text: '', done: false }];
-	}
-
-	function removeEditSubtask(index) {
-		editSubtasks = editSubtasks.filter((_, i) => i !== index);
-	}
-
 	function toggleSubtasksView() {
 		showSubtasks = !showSubtasks;
 	}
@@ -115,358 +60,229 @@
 	let totalSubtasks = $derived(todo.subtasks?.length || 0);
 </script>
 
-<svelte:window onkeydown={(e) => editing && e.key === 'Escape' && cancel()} />
+<div
+	role="listitem"
+	class="glow-card todo-card flex items-start gap-2 rounded-xl border p-3"
+	class:completed={todo.completed}
+	class:dragging={store.draggedId === todo.id}
+	class:drag-over={store.dragOverId === todo.id}
+	class:drag-indicator-before={store.dragOverId === todo.id && store.dragIndicatorPos === 'before'}
+	class:drag-indicator-after={store.dragOverId === todo.id && store.dragIndicatorPos === 'after'}
+	draggable={store.sortBy === 'manual'}
+	ondragstart={(e) => store.handleDragStart(e, todo.id)}
+	ondragend={() => store.handleDragEnd()}
+	ondragover={(e) => store.handleDragOver(e, todo.id)}
+	ondragleave={() => store.handleDragLeave()}
+	ondrop={(e) => store.handleDrop(e, todo.id)}
+>
+	{#if store.selectMode}
+		<button
+			class="select-check mt-0.5 flex shrink-0 cursor-pointer items-center justify-center self-start rounded border-none bg-none p-0.5"
+			onclick={() => store.toggleSelect(todo.id)}
+			aria-label={store.selectedTodos.has(todo.id) ? 'Deselect' : 'Select'}
+		>
+			{#if store.selectedTodos.has(todo.id)}
+				<CheckSquare size={18} />
+			{:else}
+				<Square size={18} />
+			{/if}
+		</button>
+	{/if}
 
-{#if editing}
-	<form
-		class="todo-edit flex flex-col gap-2 rounded-xl p-3.5"
-		transition:scale={{ duration: store.prefersReducedMotion ? 0 : 200, easing: elasticOut }}
-	>
-		<input
-			bind:value={editTitle}
-			placeholder="Title"
-			class="w-full rounded-lg border px-3 py-2.5 text-sm sm:text-base"
-			aria-label="Edit title"
-		/>
-		<textarea
-			bind:value={editDescription}
-			placeholder="Description"
-			rows="2"
-			class="resize-vertical min-h-[60px] w-full rounded-lg border px-3 py-2.5 text-sm sm:text-base"
-			aria-label="Edit description"
-		></textarea>
-		<div class="form-inline flex flex-wrap gap-2">
+	{#if store.sortBy === 'manual' && !store.selectMode}
+		<div
+			class="drag-handle mt-1 flex shrink-0 cursor-grab flex-col gap-[2px] self-start p-[0.25rem_0.1rem_0.25rem_0] select-none"
+			aria-label="Drag to reorder"
+		>
+			<span></span><span></span><span></span>
+		</div>
+	{/if}
+
+	<div class="todo-body min-w-0 flex-1">
+		<div class="flex items-start gap-2">
 			<input
-				type="date"
-				bind:value={editDueDate}
-				aria-label="Due date"
-				class="min-w-20 flex-1 rounded-lg border px-3 py-2.5 text-sm sm:text-base"
+				type="checkbox"
+				class="todo-check mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer"
+				checked={todo.completed}
+				onchange={() => store.toggleTodo(todo.id)}
+				aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
 			/>
-			<select
-				bind:value={editPriority}
-				aria-label="Priority"
-				class="min-w-20 flex-1 rounded-lg border px-3 py-2.5 text-sm sm:text-base"
-			>
-				<option value="high">High</option>
-				<option value="medium">Medium</option>
-				<option value="low">Low</option>
-			</select>
-			<select
-				bind:value={editCategory}
-				aria-label="Category"
-				class="min-w-20 flex-1 rounded-lg border px-3 py-2.5 text-sm sm:text-base"
-			>
-				<option value="">No category</option>
-				{#each store.categories as cat (cat)}
-					<option value={cat}>{cat}</option>
-				{/each}
-			</select>
-			<select
-				bind:value={editRecurring}
-				aria-label="Recurring"
-				class="min-w-20 flex-1 rounded-lg border px-3 py-2.5 text-sm sm:text-base"
-			>
-				<option value="">One-time</option>
-				<option value="daily">Daily</option>
-				<option value="weekly">Weekly</option>
-				<option value="monthly">Monthly</option>
-			</select>
-		</div>
-
-		<div class="tags-editor flex flex-wrap items-center gap-2">
-			<Tag size={14} />
-			{#each store.availableTags as tag (tag)}
-				<button
-					type="button"
-					class="glow-tag tag-toggle cursor-pointer rounded-full border px-2 py-0.5 text-xs font-semibold sm:text-sm"
-					class:selected={editTags.includes(tag)}
-					style="--tag-color: {store.tagColors[tag]}"
-					onclick={() =>
-						(editTags = editTags.includes(tag)
-							? editTags.filter((t) => t !== tag)
-							: [...editTags, tag])}
-				>
-					{tag}
-				</button>
-			{/each}
-		</div>
-
-		<div class="subtasks-editor mt-1">
-			<button
-				type="button"
-				class="text-btn cursor-pointer border-none bg-none p-1 text-sm sm:text-base"
-				onclick={addEditSubtask}
-			>
-				+ Add subtask
-			</button>
-			{#each editSubtasks as subtask, i (i)}
-				<div class="subtask-row-edit mt-1 flex items-center gap-2">
-					<input
-						type="checkbox"
-						checked={subtask.done}
-						class="h-4 w-4"
-						onchange={() => toggleSubtask(i)}
-						aria-label="Subtask {i + 1} done"
-					/>
-					<input
-						type="text"
-						bind:value={editSubtasks[i].text}
-						placeholder="Subtask {i + 1}"
-						class="flex-1 rounded-md border px-2 py-1.5 text-sm sm:text-base"
-						aria-label="Subtask {i + 1} text"
-					/>
-					<button
-						type="button"
-						class="icon-btn tiny flex h-6 w-6 items-center justify-center rounded border-none p-0"
-						onclick={() => removeEditSubtask(i)}
-					>
-						<X size={14} />
-					</button>
-				</div>
-			{/each}
-		</div>
-
-		<div class="todo-edit-actions flex justify-end gap-2">
-			<button
-				type="button"
-				onclick={cancel}
-				class="glow-btn btn btn-cancel cursor-pointer rounded-md border-none px-4 py-2 font-medium"
-				>Cancel</button
-			>
-			<button
-				type="button"
-				onclick={save}
-				class="glow-btn btn btn-save cursor-pointer rounded-md border-none px-4 py-2 font-medium"
-				>Save</button
-			>
-		</div>
-	</form>
-{:else}
-	<div
-		role="listitem"
-		class="glow-card todo-card flex items-start gap-2 rounded-xl border p-3"
-		class:completed={todo.completed}
-		class:dragging={store.draggedId === todo.id}
-		class:drag-over={store.dragOverId === todo.id}
-		class:drag-indicator-before={store.dragOverId === todo.id &&
-			store.dragIndicatorPos === 'before'}
-		class:drag-indicator-after={store.dragOverId === todo.id && store.dragIndicatorPos === 'after'}
-		draggable={store.sortBy === 'manual'}
-		ondragstart={(e) => store.handleDragStart(e, todo.id)}
-		ondragend={() => store.handleDragEnd()}
-		ondragover={(e) => store.handleDragOver(e, todo.id)}
-		ondragleave={() => store.handleDragLeave()}
-		ondrop={(e) => store.handleDrop(e, todo.id)}
-	>
-		{#if store.selectMode}
-			<button
-				class="select-check mt-0.5 flex shrink-0 cursor-pointer items-center justify-center self-start rounded border-none bg-none p-0.5"
-				onclick={() => store.toggleSelect(todo.id)}
-				aria-label={store.selectedTodos.has(todo.id) ? 'Deselect' : 'Select'}
-			>
-				{#if store.selectedTodos.has(todo.id)}
-					<CheckSquare size={18} />
-				{:else}
-					<Square size={18} />
-				{/if}
-			</button>
-		{/if}
-
-		{#if store.sortBy === 'manual' && !store.selectMode}
-			<div
-				class="drag-handle mt-1 flex shrink-0 cursor-grab flex-col gap-[2px] self-start p-[0.25rem_0.1rem_0.25rem_0] select-none"
-				aria-label="Drag to reorder"
-			>
-				<span></span><span></span><span></span>
-			</div>
-		{/if}
-
-		<div class="todo-body min-w-0 flex-1">
-			<div class="flex items-start gap-2">
-				<input
-					type="checkbox"
-					class="todo-check mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer"
-					checked={todo.completed}
-					onchange={() => store.toggleTodo(todo.id)}
-					aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
-				/>
-				<div class="min-w-0 flex-1">
-					<div class="flex flex-wrap items-center gap-1.5">
-						<h3 class="todo-title m-0 text-sm leading-snug font-medium sm:text-base">
-							{todo.title}
-						</h3>
-						<span class="ml-auto flex shrink-0 items-center gap-1">
-							<span
-								class="priority-badge inline-block rounded px-2 py-1 text-xs font-bold tracking-wider text-white uppercase sm:text-sm priority-{todo.priority ||
-									'medium'}"
-							>
-								{todo.priority || 'medium'}
-							</span>
-							{#if todo.category && store.categories.includes(todo.category)}
-								<span
-									class="category-badge inline-block rounded-full px-2 py-1 text-xs font-semibold text-white sm:text-sm"
-									style="background: {store.categoryColors[todo.category]};"
-								>
-									{todo.category}
-								</span>
-							{/if}
-							{#if todo.recurring}
-								<span
-									class="recurring-badge inline-flex h-6 w-8 items-center justify-center rounded-full"
-									style="background: var(--btn-edit); color: white;"
-									title="Recurring {todo.recurring}"
-								>
-									<Repeat size={20} />
-								</span>
-							{/if}
+			<div class="min-w-0 flex-1">
+				<div class="flex flex-wrap items-center gap-1.5">
+					<h3 class="todo-title m-0 text-sm leading-snug font-medium sm:text-base">
+						{todo.title}
+					</h3>
+					<span class="ml-auto flex shrink-0 items-center gap-1">
+						<span
+							class="priority-badge inline-block rounded px-2 py-1 text-xs font-bold tracking-wider text-white uppercase sm:text-sm priority-{todo.priority ||
+								'medium'}"
+						>
+							{todo.priority || 'medium'}
 						</span>
-					</div>
-
-					{#if todo.description || (todo.tags && todo.tags.length > 0)}
-						<div class="mt-1 ml-2 flex items-start gap-2" class:justify-end={!todo.description}>
-							{#if todo.description}
-								<div class="markdown-content min-w-0 flex-1 text-sm leading-relaxed sm:text-base">
-									{@html renderMarkdown(todo.description)}
-								</div>
-							{:else}
-								<div class="flex-1" style="color: var(--text-muted);">
-									<p style="font-style: italic;">No details</p>
-								</div>
-							{/if}
-
-							{#if todo.tags && todo.tags.length > 0}
-								<div class="mt-1 flex shrink-0 flex-wrap gap-1">
-									{#each todo.tags as tag (tag)}
-										<span
-											class="inline-block rounded-full px-2 py-1 text-xs font-semibold text-white sm:text-sm"
-											style="background: {store.tagColors[tag]};"
-										>
-											{tag}
-										</span>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					{/if}
-
-					<div class="flex flex-wrap items-center gap-2">
-						{#if totalSubtasks > 0}
-							<button
-								class="subtasks-preview inline-flex cursor-pointer items-center gap-0.5 border-none bg-none p-0.5 text-sm sm:text-base"
-								onclick={toggleSubtasksView}
+						{#if todo.category && store.categories.includes(todo.category)}
+							<span
+								class="category-badge inline-block rounded-full px-2 py-1 text-xs font-semibold text-white sm:text-sm"
+								style="background: {store.categoryColors[todo.category]};"
 							>
-								{#if showSubtasks}
-									<ChevronDown size={14} />
-								{:else}
-									<ChevronRight size={14} />
-								{/if}
-								<span>{completedSubtasks}/{totalSubtasks}</span>
-							</button>
+								{todo.category}
+							</span>
+						{/if}
+						{#if todo.recurring}
+							<span
+								class="recurring-badge inline-flex h-6 w-8 items-center justify-center rounded-full"
+								style="background: var(--btn-edit); color: white;"
+								title="Recurring {todo.recurring}"
+							>
+								<Repeat size={20} />
+							</span>
+						{/if}
+					</span>
+				</div>
+
+				{#if todo.description || (todo.tags && todo.tags.length > 0)}
+					<div class="mt-1 ml-2 flex items-start gap-2" class:justify-end={!todo.description}>
+						{#if todo.description}
+							<div class="markdown-content min-w-0 flex-1 text-sm leading-relaxed sm:text-base">
+								{@html renderMarkdown(todo.description)}
+							</div>
+						{:else}
+							<div class="flex-1" style="color: var(--text-muted);">
+								<p style="font-style: italic;">No details</p>
+							</div>
+						{/if}
+
+						{#if todo.tags && todo.tags.length > 0}
+							<div class="mt-1 flex shrink-0 flex-wrap gap-1">
+								{#each todo.tags as tag (tag)}
+									<span
+										class="inline-block rounded-full px-2 py-1 text-xs font-semibold text-white sm:text-sm"
+										style="background: {store.tagColors[tag]};"
+									>
+										{tag}
+									</span>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+
+				<div class="flex flex-wrap items-center gap-2">
+					{#if totalSubtasks > 0}
+						<button
+							class="subtasks-preview inline-flex cursor-pointer items-center gap-0.5 border-none bg-none p-0.5 text-sm sm:text-base"
+							onclick={toggleSubtasksView}
+						>
+							{#if showSubtasks}
+								<ChevronDown size={14} />
+							{:else}
+								<ChevronRight size={14} />
+							{/if}
+							<span>{completedSubtasks}/{totalSubtasks}</span>
+						</button>
+					{/if}
+					<button
+						class="inline-flex cursor-pointer items-center gap-0.5 border-none bg-none p-0.5 text-sm sm:text-base"
+						style="color: var(--text-muted);"
+						onclick={() => (showAddSubtask = !showAddSubtask)}
+					>
+						+ Subtask
+					</button>
+					<span class="ml-auto flex items-center gap-1">
+						{#if todo.dueDate}
+							<span
+								class="text-sm font-medium sm:text-base"
+								style="color: {isOverdue(todo.dueDate)
+									? 'var(--priority-high)'
+									: 'var(--text-muted)'};"
+							>
+								{formatDate(todo.dueDate)}
+							</span>
 						{/if}
 						<button
-							class="inline-flex cursor-pointer items-center gap-0.5 border-none bg-none p-0.5 text-sm sm:text-base"
+							onclick={() => store.startEdit(todo.id)}
+							class="glow-btn mt-2 flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
 							style="color: var(--text-muted);"
-							onclick={() => (showAddSubtask = !showAddSubtask)}
+							aria-label="Edit task"
 						>
-							+ Subtask
+							<Edit2 size={16} />
 						</button>
-						<span class="ml-auto flex items-center gap-1">
-							{#if todo.dueDate}
-								<span
-									class="text-sm font-medium sm:text-base"
-									style="color: {isOverdue(todo.dueDate)
-										? 'var(--priority-high)'
-										: 'var(--text-muted)'};"
-								>
-									{formatDate(todo.dueDate)}
-								</span>
-							{/if}
-							<button
-								onclick={startEdit}
-								class="glow-btn mt-2 flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
-								style="color: var(--text-muted);"
-								aria-label="Edit task"
-							>
-								<Edit2 size={16} />
-							</button>
-							<button
-								onclick={() => store.deleteTodo(todo.id)}
-								class="glow-btn mt-2 flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
-								style="color: var(--text-muted);"
-								aria-label="Archive task"
-							>
-								<Archive size={16} />
-							</button>
-						</span>
-					</div>
-
-					{#if showSubtasks && todo.subtasks && todo.subtasks.length > 0}
-						<div
-							class="mt-1 flex flex-col gap-0.5 border-l-2 pl-3"
-							transition:slide={{ duration: store.prefersReducedMotion ? 0 : 150 }}
-							style="border-color: var(--border);"
+						<button
+							onclick={() => store.deleteTodo(todo.id)}
+							class="glow-btn mt-2 flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
+							style="color: var(--text-muted);"
+							aria-label="Archive task"
 						>
-							{#each todo.subtasks as subtask, i (i)}
-								<div
-									class="subtask-item flex items-center gap-1.5 py-0.5 text-sm sm:text-base"
-									class:done={subtask.done}
-								>
-									<input
-										type="checkbox"
-										checked={subtask.done}
-										class="h-[13px] w-[13px]"
-										onchange={() => {
-											subtask.done = !subtask.done;
-											store.updateTodo(todo.id, { subtasks: todo.subtasks });
-										}}
-									/>
-									<span style="color: var(--text-secondary);">{subtask.text}</span>
-								</div>
-							{/each}
-						</div>
-					{/if}
-
-					{#if showAddSubtask}
-						<div
-							class="mt-1 flex items-center gap-1.5"
-							transition:slide={{ duration: store.prefersReducedMotion ? 0 : 100 }}
-						>
-							<input
-								type="text"
-								class="flex-1 rounded-md px-2 py-1 text-sm sm:text-base"
-								style="border: 1px solid var(--border); background: var(--input-bg); color: var(--text);"
-								bind:value={newSubtaskText}
-								placeholder="Add a subtask…"
-								onkeydown={(e) => {
-									if (e.key === 'Enter') {
-										e.preventDefault();
-										addInlineSubtask();
-									}
-								}}
-								aria-label="New subtask text"
-							/>
-							<button
-								class="cursor-pointer rounded-md border-none px-2 py-1 text-sm font-medium text-white sm:text-base"
-								style="background: var(--btn-save);"
-								onclick={addInlineSubtask}>Add</button
-							>
-							<button
-								class="cursor-pointer rounded-md border-none px-2 py-1 text-xs font-medium text-white sm:text-sm"
-								style="background: var(--btn-cancel);"
-								onclick={() => {
-									showAddSubtask = false;
-									newSubtaskText = '';
-								}}
-							>
-								<X size={14} />
-							</button>
-						</div>
-					{/if}
+							<Archive size={16} />
+						</button>
+					</span>
 				</div>
+
+				{#if showSubtasks && todo.subtasks && todo.subtasks.length > 0}
+					<div
+						class="mt-1 flex flex-col gap-0.5 border-l-2 pl-3"
+						transition:slide={{ duration: store.prefersReducedMotion ? 0 : 150 }}
+						style="border-color: var(--border);"
+					>
+						{#each todo.subtasks as subtask, i (i)}
+							<div
+								class="subtask-item flex items-center gap-1.5 py-0.5 text-sm sm:text-base"
+								class:done={subtask.done}
+							>
+								<input
+									type="checkbox"
+									checked={subtask.done}
+									class="h-[13px] w-[13px]"
+									onchange={() => {
+										subtask.done = !subtask.done;
+										store.updateTodo(todo.id, { subtasks: todo.subtasks });
+									}}
+								/>
+								<span style="color: var(--text-secondary);">{subtask.text}</span>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				{#if showAddSubtask}
+					<div
+						class="mt-1 flex items-center gap-1.5"
+						transition:slide={{ duration: store.prefersReducedMotion ? 0 : 100 }}
+					>
+						<input
+							type="text"
+							class="flex-1 rounded-md px-2 py-1 text-sm sm:text-base"
+							style="border: 1px solid var(--border); background: var(--input-bg); color: var(--text);"
+							bind:value={newSubtaskText}
+							placeholder="Add a subtask…"
+							onkeydown={(e) => {
+								if (e.key === 'Enter') {
+									e.preventDefault();
+									addInlineSubtask();
+								}
+							}}
+							aria-label="New subtask text"
+						/>
+						<button
+							class="cursor-pointer rounded-md border-none px-2 py-1 text-sm font-medium text-white sm:text-base"
+							style="background: var(--btn-save);"
+							onclick={addInlineSubtask}>Add</button
+						>
+						<button
+							class="cursor-pointer rounded-md border-none px-2 py-1 text-xs font-medium text-white sm:text-sm"
+							style="background: var(--btn-cancel);"
+							onclick={() => {
+								showAddSubtask = false;
+								newSubtaskText = '';
+							}}
+						>
+							<X size={14} />
+						</button>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
-{/if}
+</div>
 
 <style>
 	.todo-card {
@@ -534,8 +350,7 @@
 	}
 
 	.todo-check,
-	.subtask-item input[type='checkbox'],
-	.subtask-row-edit input[type='checkbox'] {
+	.subtask-item input[type='checkbox'] {
 		accent-color: var(--btn-save);
 	}
 
@@ -551,70 +366,6 @@
 	.priority-low {
 		background: var(--priority-low);
 		color: #1e293b;
-	}
-
-	.todo-edit {
-		border: 1px solid var(--border);
-		background: var(--todo-bg);
-	}
-
-	.todo-edit input,
-	.todo-edit textarea,
-	.todo-edit select,
-	.subtask-row-edit input[type='text'] {
-		border: 1px solid var(--border-input);
-		background: var(--input-bg);
-		color: var(--text);
-	}
-
-	.todo-edit input:focus,
-	.todo-edit textarea:focus,
-	.todo-edit select:focus,
-	.subtask-row-edit input[type='text']:focus {
-		outline: none;
-		border-color: var(--btn-primary);
-		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-	}
-
-	.tags-editor {
-		color: var(--text-muted);
-	}
-
-	.tag-toggle {
-		background: var(--input-bg);
-		color: var(--text-secondary);
-		border-color: var(--border-input);
-	}
-
-	.tag-toggle.selected {
-		background: var(--tag-color);
-		color: white;
-		border-color: var(--tag-color);
-	}
-
-	.text-btn {
-		color: var(--btn-primary);
-	}
-
-	.icon-btn.tiny {
-		background: var(--btn-delete);
-		color: white;
-	}
-
-	.btn-save {
-		background: var(--btn-save);
-	}
-
-	.btn-save:hover {
-		background: var(--btn-save-hover);
-	}
-
-	.btn-cancel {
-		background: var(--btn-cancel);
-	}
-
-	.btn-cancel:hover {
-		background: var(--btn-cancel-hover);
 	}
 
 	.subtasks-preview {
@@ -640,28 +391,12 @@
 		background: var(--input-bg);
 	}
 
-	.tag-toggle:hover {
-		filter: brightness(1.1);
-	}
-
-	.text-btn:hover {
-		color: var(--btn-primary-hover);
-	}
-
-	.icon-btn.tiny:hover {
-		background: var(--btn-delete-hover);
-	}
-
 	.subtask-item.done {
 		text-decoration: line-through;
 		opacity: 0.6;
 	}
 
-	:global(.tag-toggle:focus-visible),
 	:global(.subtasks-preview:focus-visible),
-	:global(.btn:focus-visible),
-	:global(.text-btn:focus-visible),
-	:global(.icon-btn:focus-visible),
 	:global(.select-check:focus-visible) {
 		outline: 2px solid var(--btn-primary);
 		outline-offset: 2px;
@@ -766,11 +501,5 @@
 
 	:global(.markdown-content em) {
 		font-style: italic;
-	}
-
-	@media (max-width: 480px) {
-		.todo-edit .form-inline {
-			flex-direction: column;
-		}
 	}
 </style>
