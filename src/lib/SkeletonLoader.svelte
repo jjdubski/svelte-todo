@@ -1,5 +1,5 @@
 <script>
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 
 	const store = getTodoStore();
 </script>

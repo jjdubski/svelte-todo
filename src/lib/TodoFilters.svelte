@@ -2,7 +2,7 @@
 	import { slide } from 'svelte/transition';
 	import { Search, CheckSquare, Archive, X, Calendar, RotateCcw } from 'lucide-svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 
 	const store = getTodoStore();
 

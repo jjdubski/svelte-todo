@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderMarkdown } from '../markdown.js';
+import { renderMarkdown } from '../scripts/markdown.js';
 
 describe('renderMarkdown', () => {
 	it('returns empty string for falsy input', () => {

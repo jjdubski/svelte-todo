@@ -1,7 +1,8 @@
 <script>
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import StatsBar from '$lib/StatsBar.svelte';
 	import { Check, Clock, ArrowLeft, Archive } from 'lucide-svelte';
+	import { localDateStr } from '$lib/utils/todoUtils.js';
 
 	const store = getTodoStore();
 
@@ -46,42 +47,52 @@
 	]);
 
 	/** Track which column is being hovered for drop */
-	let dropTarget = $state(null);
+	let dropTargetColumn = $state(null);
+	/** Track which card is being hovered for drop */
+	let dropTargetCardId = $state(null);
+	/** Track drop position relative to the hovered card ('before' or 'after') */
+	let dropIndicatorPos = $state(null);
 
 	/**
-	 * Handle dropping a card onto a column.
+	 * Handle dropping a card onto a column or another card.
 	 * @param {string} columnKey
+	 * @param {number|null} targetCardId
 	 */
-	function handleColumnDrop(columnKey) {
-		dropTarget = null;
-		if (store.draggedId === null) return;
-		const todo = store.todos.find((t) => t.id === store.draggedId);
-		if (!todo) return;
-		store.draggedId = null;
+	function handleColumnDrop(columnKey, targetCardId = null) {
+		const draggedId = store.draggedId;
+		const indicator = dropIndicatorPos;
 
+		store.draggedId = null;
+		dropTargetColumn = null;
+		dropTargetCardId = null;
+		dropIndicatorPos = null;
+
+		if (draggedId === null) return;
+		const todo = store.todos.find((t) => t.id === draggedId);
+		if (!todo) return;
+
+		// 1. First, update status/tags to place it in the right column
 		if (columnKey === 'pending') {
-			// Move to Pending: remove in-progress tag, unmark completed
-			if (todo.completed) {
-				store.toggleTodo(todo.id);
-			}
-			if ((todo.tags || []).includes('in-progress')) {
-				store.toggleTag(todo.id, 'in-progress');
-			}
+			if (todo.completed) store.toggleTodo(todo.id);
+			if ((todo.tags || []).includes('in-progress')) store.toggleTag(todo.id, 'in-progress');
 		} else if (columnKey === 'in-progress') {
-			// Move to In Progress: add in-progress tag, unmark completed
-			if (todo.completed) {
-				store.toggleTodo(todo.id);
-			}
-			if (!(todo.tags || []).includes('in-progress')) {
-				store.toggleTag(todo.id, 'in-progress');
-			}
+			if (todo.completed) store.toggleTodo(todo.id);
+			if (!(todo.tags || []).includes('in-progress')) store.toggleTag(todo.id, 'in-progress');
 		} else if (columnKey === 'done') {
-			// Move to Done: mark completed, remove in-progress tag
-			if (!todo.completed) {
-				store.toggleTodo(todo.id);
-			}
-			if ((todo.tags || []).includes('in-progress')) {
-				store.toggleTag(todo.id, 'in-progress');
+			if (!todo.completed) store.toggleTodo(todo.id);
+			if ((todo.tags || []).includes('in-progress')) store.toggleTag(todo.id, 'in-progress');
+		}
+
+		// 2. Second, adjust order in store.todos
+		if (targetCardId !== null && draggedId !== targetCardId) {
+			const fromIdx = store.todos.findIndex((t) => t.id === draggedId);
+			let toIdx = store.todos.findIndex((t) => t.id === targetCardId);
+			if (fromIdx !== -1 && toIdx !== -1) {
+				const [item] = store.todos.splice(fromIdx, 1);
+				if (fromIdx < toIdx) toIdx--; // Adjust for removal
+				// If dropped "after", insert after the target
+				if (indicator === 'after') toIdx++;
+				store.todos.splice(toIdx, 0, item);
 			}
 		}
 	}
@@ -100,7 +111,7 @@
 
 	function isOverdue(dateStr) {
 		if (!dateStr) return false;
-		const today = new Date().toISOString().split('T')[0];
+		const today = localDateStr(new Date());
 		return dateStr < today;
 	}
 </script>
@@ -110,7 +121,7 @@
 	style="background: linear-gradient(145deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%); transition: background 0.3s;"
 >
 	<div
-		class="w-full max-w-[1200px] rounded-2xl border p-8 sm:rounded-xl sm:p-5 xl:max-w-[1400px] 2xl:max-w-[1600px]"
+		class="w-full max-w-[1080px] rounded-2xl border p-8 sm:rounded-xl sm:p-5 xl:max-w-[1400px] 2xl:max-w-[1600px]"
 		style="background: var(--card-bg); box-shadow: 0 8px 32px var(--shadow); border-color: var(--border); transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;"
 	>
 		<div class="mb-4 flex items-center justify-between gap-2">
@@ -134,20 +145,23 @@
 					class="board-column flex flex-col rounded-xl border"
 					role="region"
 					aria-label={col.label + ' column'}
-					style="background: {col.bgColor}; border-color: {dropTarget === col.key
+					style="background: {col.bgColor}; border-color: {dropTargetColumn === col.key &&
+					!dropTargetCardId
 						? col.color
 						: col.borderColor}; transition: border-color 0.2s;"
 					ondragover={(e) => {
 						e.preventDefault();
 						e.dataTransfer.dropEffect = 'move';
-						dropTarget = col.key;
+						if (!dropTargetCardId) dropTargetColumn = col.key;
 					}}
-					ondragleave={() => {
-						dropTarget = null;
+					ondragleave={(e) => {
+						if (!e.currentTarget.contains(e.relatedTarget)) {
+							dropTargetColumn = null;
+						}
 					}}
 					ondrop={(e) => {
 						e.preventDefault();
-						handleColumnDrop(col.key);
+						if (!dropTargetCardId) handleColumnDrop(col.key);
 					}}
 				>
 					<!-- Column header -->
@@ -184,15 +198,54 @@
 									class="glow-card board-card flex items-start gap-2 rounded-xl border p-3"
 									role="listitem"
 									class:dragging={store.draggedId === todo.id}
+									class:drag-over={dropTargetCardId === todo.id}
+									class:drag-indicator-before={dropTargetCardId === todo.id &&
+										dropIndicatorPos === 'before'}
+									class:drag-indicator-after={dropTargetCardId === todo.id &&
+										dropIndicatorPos === 'after'}
 									draggable="true"
 									style="background: var(--todo-bg); border-color: var(--border);"
 									ondragstart={(e) => {
 										e.dataTransfer.effectAllowed = 'move';
 										e.dataTransfer.setData('text/plain', String(todo.id));
 										store.draggedId = todo.id;
+										// Remove default ghost image as it conflicts with custom drag logic sometimes, or keep it
 									}}
 									ondragend={() => {
 										store.draggedId = null;
+										dropTargetCardId = null;
+										dropIndicatorPos = null;
+									}}
+									ondragover={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										e.dataTransfer.dropEffect = 'move';
+										if (store.draggedId !== todo.id) {
+											dropTargetCardId = todo.id;
+											dropTargetColumn = col.key;
+
+											const fromIdx = store.todos.findIndex((t) => t.id === store.draggedId);
+											const toIdx = store.todos.findIndex((t) => t.id === todo.id);
+
+											if (fromIdx !== -1 && toIdx !== -1) {
+												dropIndicatorPos = fromIdx < toIdx ? 'after' : 'before';
+											} else {
+												const rect = e.currentTarget.getBoundingClientRect();
+												const y = e.clientY - rect.top;
+												dropIndicatorPos = y < rect.height / 2 ? 'before' : 'after';
+											}
+										}
+									}}
+									ondragleave={(e) => {
+										if (dropTargetCardId === todo.id) {
+											dropTargetCardId = null;
+											dropIndicatorPos = null;
+										}
+									}}
+									ondrop={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										handleColumnDrop(col.key, todo.id);
 									}}
 								>
 									<!-- Checkbox -->
@@ -301,6 +354,62 @@
 
 	.board-card.dragging {
 		opacity: 0.35;
+	}
+
+	.board-card.drag-over {
+		transform: scale(1.02);
+		border-color: var(--btn-primary);
+		box-shadow:
+			0 12px 40px rgba(37, 99, 235, 0.2),
+			0 0 0 2px rgba(37, 99, 235, 0.15);
+	}
+
+	.board-card.drag-indicator-before {
+		border-top: 2px solid var(--btn-primary);
+		box-shadow:
+			0 -1px 0 0 var(--btn-primary),
+			0 0 12px rgba(37, 99, 235, 0.4);
+		animation: pulse-indicator-top 1.5s ease-in-out infinite;
+	}
+
+	.board-card.drag-indicator-after {
+		border-bottom: 2px solid var(--btn-primary);
+		box-shadow:
+			0 1px 0 0 var(--btn-primary),
+			0 0 12px rgba(37, 99, 235, 0.4);
+		animation: pulse-indicator-bottom 1.5s ease-in-out infinite;
+	}
+
+	@keyframes pulse-indicator-top {
+		0%,
+		100% {
+			border-top-color: var(--btn-primary);
+			box-shadow:
+				0 -1px 0 0 var(--btn-primary),
+				0 0 8px rgba(37, 99, 235, 0.3);
+		}
+		50% {
+			border-top-color: rgba(37, 99, 235, 0.4);
+			box-shadow:
+				0 -1px 0 0 rgba(37, 99, 235, 0.4),
+				0 0 4px rgba(37, 99, 235, 0.1);
+		}
+	}
+
+	@keyframes pulse-indicator-bottom {
+		0%,
+		100% {
+			border-bottom-color: var(--btn-primary);
+			box-shadow:
+				0 1px 0 0 var(--btn-primary),
+				0 0 8px rgba(37, 99, 235, 0.3);
+		}
+		50% {
+			border-bottom-color: rgba(37, 99, 235, 0.4);
+			box-shadow:
+				0 1px 0 0 rgba(37, 99, 235, 0.4),
+				0 0 4px rgba(37, 99, 235, 0.1);
+		}
 	}
 
 	.line-through {

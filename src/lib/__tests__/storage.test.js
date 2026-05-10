@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { storageGet, storageSet, storageRemove, storageAvailable } from '../storage.js';
+import { storageGet, storageSet, storageRemove, storageAvailable } from '../scripts/storage.js';
 
 describe('storage', () => {
 	let mockStore = {};

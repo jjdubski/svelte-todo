@@ -10,10 +10,11 @@
 		CheckSquare,
 		Square
 	} from 'lucide-svelte';
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
-	import { renderMarkdown } from '$lib/markdown.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
+	import { renderMarkdown } from '$lib/scripts/markdown.js';
+	import { format, localDateStr } from '$lib/utils/todoUtils.js';
 
-	/** @type {import('./todoStore.svelte.js').Todo} */
+	/** @type {import('./state/todoStore.svelte.js').Todo} */
 	let { todo } = $props();
 
 	const store = getTodoStore();
@@ -33,6 +34,7 @@
 
 	function formatDate(dateStr) {
 		if (!dateStr) return '';
+		// Parse as local timezone by appending T00:00:00 to avoid UTC shift issues
 		const date = new Date(dateStr + 'T00:00:00');
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -47,8 +49,7 @@
 
 	function isOverdue(dateStr) {
 		if (!dateStr) return false;
-		const now = new Date();
-		const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+		const today = localDateStr(new Date());
 		return dateStr < today && !todo.completed;
 	}
 
@@ -90,9 +91,10 @@
 	{/if}
 
 	<div class="todo-body min-w-0 flex-1">
-		<div class="flex items-start gap-2">
+		<div class="flex min-w-0 flex-1 items-start gap-2">
 			<input
 				type="checkbox"
+				id="todo-{todo.id}"
 				class="todo-check mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer"
 				checked={todo.completed}
 				onchange={() => store.toggleTodo(todo.id)}
@@ -100,9 +102,12 @@
 			/>
 			<div class="min-w-0 flex-1">
 				<div class="flex flex-wrap items-center gap-1.5">
-					<h3 class="todo-title m-0 text-sm leading-snug font-medium sm:text-base">
+					<label
+						for="todo-{todo.id}"
+						class="todo-title m-0 cursor-pointer text-sm leading-snug font-medium sm:text-base"
+					>
 						{todo.title}
-					</h3>
+					</label>
 					<span class="ml-auto flex shrink-0 items-center gap-1">
 						<span
 							class="priority-badge inline-block rounded px-2 py-1 text-xs font-bold tracking-wider text-white uppercase sm:text-sm priority-{todo.priority ||
@@ -215,21 +220,21 @@
 						style="border-color: var(--border);"
 					>
 						{#each todo.subtasks as subtask, i (i)}
-							<div
-								class="subtask-item flex items-center gap-1.5 py-0.5 text-sm sm:text-base"
+							<label
+								class="subtask-item flex cursor-pointer items-center gap-1.5 py-0.5 text-sm sm:text-base"
 								class:done={subtask.done}
 							>
 								<input
 									type="checkbox"
 									checked={subtask.done}
-									class="h-[13px] w-[13px]"
+									class="h-[13px] w-[13px] cursor-pointer"
 									onchange={() => {
 										subtask.done = !subtask.done;
 										store.updateTodo(todo.id, { subtasks: todo.subtasks });
 									}}
 								/>
 								<span style="color: var(--text-secondary);">{subtask.text}</span>
-							</div>
+							</label>
 						{/each}
 					</div>
 				{/if}
@@ -326,18 +331,6 @@
 	.todo-card.completed .todo-title {
 		text-decoration: line-through;
 		color: var(--completed-text);
-	}
-
-	.drag-handle:active {
-		cursor: grabbing;
-	}
-
-	.drag-handle span {
-		display: block;
-		width: 14px;
-		height: 2px;
-		background: var(--drag-handle);
-		border-radius: 2px;
 	}
 
 	.todo-check,

@@ -1,6 +1,19 @@
 import { createContext } from 'svelte';
 import { SvelteSet } from 'svelte/reactivity';
-import { storageGet, storageSet } from '$lib/storage.js';
+import { storageGet, storageSet } from '$lib/scripts/storage.js';
+import {
+	localDateStr,
+	fuzzyMatch,
+	computeStats,
+	computeStreak,
+	computeCompletionsByDay,
+	computePriorityDistribution,
+	computeCategoryBreakdown,
+	computeOverdueTasks,
+	computeUpcomingDue,
+	getNextDueDate,
+	getRandomTagColor
+} from '$lib/utils/todoUtils.js';
 
 /**
  * @typedef {Object} Todo
@@ -17,18 +30,6 @@ import { storageGet, storageSet } from '$lib/storage.js';
  * @property {string} [completedAt]
  * @property {string} createdAt
  */
-
-/**
- * Format a Date as YYYY-MM-DD in the local timezone.
- * @param {Date} [date]
- * @returns {string}
- */
-function _localDateStr(date = new Date()) {
-	const y = date.getFullYear();
-	const m = String(date.getMonth() + 1).padStart(2, '0');
-	const d = String(date.getDate()).padStart(2, '0');
-	return `${y}-${m}-${d}`;
-}
 
 /**
  * @typedef {Object} Stats
@@ -133,20 +134,6 @@ class TodoStore {
 			tags: ['health']
 		}
 	]);
-
-	// ── Form state ──
-	newTitle = $state('');
-	newDescription = $state('');
-	newDueDate = $state('');
-	newPriority = $state('medium');
-	newCategory = $state('');
-	newTags = $state([]);
-	newCustomTag = $state('');
-	newRecurring = $state('');
-	newCategoryName = $state('');
-	showAddCategory = $state(false);
-	showForm = $state(true);
-	selectedTemplate = $state('None');
 
 	// ── Filter / Sort ──
 	filterText = $state('');
@@ -263,6 +250,11 @@ class TodoStore {
 		this._init();
 		this._checkReducedMotion();
 
+		// Storage event listener for cross-tab sync
+		if (typeof window !== 'undefined') {
+			window.addEventListener('storage', this._handleStorageChange.bind(this));
+		}
+
 		// Effect: recompute stats, upcoming due, and save todos + archivedTodos
 		$effect(() => {
 			const t = this.todos;
@@ -314,26 +306,6 @@ class TodoStore {
 			storageSet('darkMode', dm);
 		});
 
-		// Effect: template detection — unset template if user modified fields
-		$effect(() => {
-			if (this.selectedTemplate !== 'None') {
-				const t = this.templates.find((t) => t.name === this.selectedTemplate);
-				if (t) {
-					const hasChanges =
-						this.newTitle !== t.title ||
-						this.newDescription !== t.description ||
-						this.newDueDate !== t.dueDate ||
-						this.newPriority !== t.priority ||
-						this.newCategory !== t.category ||
-						JSON.stringify(this.newTags) !== JSON.stringify(t.tags) ||
-						this.newRecurring !== '';
-					if (hasChanges) {
-						this.selectedTemplate = 'None';
-					}
-				}
-			}
-		});
-
 		// ── Notification setup (runs once after mount) ──
 		if (typeof window !== 'undefined') {
 			setTimeout(() => {
@@ -370,15 +342,32 @@ class TodoStore {
 	// ── Initialization ──
 
 	_init() {
-		const saved = storageGet('todos');
-		if (saved && Array.isArray(saved) && saved.length > 0) {
-			this.todos = saved;
-			this.nextId = Math.max(...saved.map((t) => t.id)) + 1;
+		const saved = storageGet('todos') || [];
+		const archivedSaved = storageGet('archivedTodos') || [];
+
+		let maxId = 0;
+		const seenIds = new Set();
+
+		if (Array.isArray(saved) && saved.length > 0) {
+			this.todos = saved.map((t) => {
+				if (seenIds.has(t.id)) t.id = ++maxId; // Recover corrupted IDs
+				seenIds.add(t.id);
+				maxId = Math.max(maxId, t.id);
+				return t;
+			});
 		}
-		const archivedSaved = storageGet('archivedTodos');
-		if (archivedSaved && Array.isArray(archivedSaved)) {
-			this.archivedTodos = archivedSaved;
+
+		if (Array.isArray(archivedSaved) && archivedSaved.length > 0) {
+			this.archivedTodos = archivedSaved.map((t) => {
+				if (seenIds.has(t.id)) t.id = ++maxId; // Recover corrupted IDs
+				seenIds.add(t.id);
+				maxId = Math.max(maxId, t.id);
+				return t;
+			});
 		}
+
+		this.nextId = maxId + 1;
+
 		this.darkMode = this._getInitialDarkMode();
 		this.isLoading = false;
 	}
@@ -408,14 +397,7 @@ class TodoStore {
 	 * @returns {boolean}
 	 */
 	_fuzzyMatch(query, text) {
-		if (!query) return true;
-		const q = query.toLowerCase();
-		const t = text.toLowerCase();
-		let qi = 0;
-		for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-			if (t[ti] === q[qi]) qi++;
-		}
-		return qi === q.length;
+		return fuzzyMatch(query, text);
 	}
 
 	// ── Stats computation ──
@@ -425,11 +407,7 @@ class TodoStore {
 	 * @returns {Stats}
 	 */
 	_computeStats(todos) {
-		const today = _localDateStr();
-		const active = todos.filter((t) => !t.completed).length;
-		const completed = todos.filter((t) => t.completed).length;
-		const overdue = todos.filter((t) => !t.completed && t.dueDate && t.dueDate < today).length;
-		return { active, completed, overdue, total: todos.length };
+		return computeStats(todos);
 	}
 
 	/**
@@ -438,22 +416,7 @@ class TodoStore {
 	 * @returns {number}
 	 */
 	_computeStreak(todos) {
-		const completed = todos.filter((t) => t.completed && t.completedAt);
-		if (completed.length === 0) return 0;
-		const completionDates = new Set(completed.map((t) => _localDateStr(new Date(t.completedAt))));
-		let streak = 0;
-		const todayStr = _localDateStr();
-		for (let i = 0; ; i++) {
-			const d = new Date();
-			d.setDate(d.getDate() - i);
-			const dateStr = _localDateStr(d);
-			if (completionDates.has(dateStr)) {
-				streak++;
-			} else {
-				break;
-			}
-		}
-		return streak;
+		return computeStreak(todos);
 	}
 
 	/**
@@ -462,24 +425,7 @@ class TodoStore {
 	 * @returns {Record<string,number>}
 	 */
 	_computeCompletionsByDay(todos) {
-		const completed = todos.filter((t) => t.completed && t.completedAt);
-		const now = new Date();
-		const dayOfWeek = now.getDay();
-		// Monday = 1, get the diff to reach Monday
-		const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-		const monday = new Date(now);
-		monday.setDate(now.getDate() + diffToMonday);
-		monday.setHours(0, 0, 0, 0);
-		const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-		const counts = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
-		for (const todo of completed) {
-			const completedDate = new Date(todo.completedAt);
-			if (completedDate >= monday) {
-				const day = completedDate.getDay();
-				counts[labels[day]]++;
-			}
-		}
-		return counts;
+		return computeCompletionsByDay(todos);
 	}
 
 	/**
@@ -488,12 +434,7 @@ class TodoStore {
 	 * @returns {{high:number, medium:number, low:number}}
 	 */
 	_computePriorityDistribution(todos) {
-		const result = { high: 0, medium: 0, low: 0 };
-		for (const t of todos) {
-			const p = t.priority || 'medium';
-			if (p in result) result[p]++;
-		}
-		return result;
+		return computePriorityDistribution(todos);
 	}
 
 	/**
@@ -502,13 +443,7 @@ class TodoStore {
 	 * @returns {Record<string,number>}
 	 */
 	_computeCategoryBreakdown(todos) {
-		const result = {};
-		for (const t of todos) {
-			if (t.category) {
-				result[t.category] = (result[t.category] || 0) + 1;
-			}
-		}
-		return result;
+		return computeCategoryBreakdown(todos);
 	}
 
 	/**
@@ -517,8 +452,7 @@ class TodoStore {
 	 * @returns {Todo[]}
 	 */
 	_computeOverdueTasks(todos) {
-		const today = _localDateStr();
-		return todos.filter((t) => !t.completed && t.dueDate && t.dueDate < today);
+		return computeOverdueTasks(todos);
 	}
 
 	/**
@@ -652,48 +586,6 @@ class TodoStore {
 			completed: false,
 			createdAt: new Date().toISOString()
 		});
-	}
-
-	/**
-	 * Add a task from form state. Subtasks are passed in from form component (not stored).
-	 * @param {Array<{text:string, done:boolean}>} [subtasks]
-	 */
-	addFromForm(subtasks) {
-		if (this.newTitle.trim()) {
-			this.addTodo(
-				this.newTitle.trim(),
-				this.newDescription.trim(),
-				this.newDueDate,
-				this.newPriority,
-				this.newCategory,
-				this.newTags,
-				this.newRecurring,
-				subtasks
-			);
-			this.resetForm();
-		}
-	}
-
-	resetForm() {
-		this.newTitle = '';
-		this.newDescription = '';
-		this.newDueDate = '';
-		this.newPriority = 'medium';
-		this.newCategory = '';
-		this.newTags = [];
-		this.newRecurring = '';
-		this.selectedTemplate = 'None';
-	}
-
-	applyTemplate(template) {
-		this.selectedTemplate = template.name;
-		this.newTitle = template.title;
-		this.newDescription = template.description;
-		this.newDueDate = template.dueDate;
-		this.newPriority = template.priority;
-		this.newCategory = template.category;
-		this.newTags = [...template.tags];
-		this.newRecurring = '';
 	}
 
 	/**
@@ -986,18 +878,6 @@ class TodoStore {
 
 	// ── Tag management ──
 
-	addCustomTag() {
-		const tag = this.newCustomTag.trim().toLowerCase();
-		if (tag && !this.newTags.includes(tag)) {
-			this.newTags = [...this.newTags, tag];
-			if (!this.availableTags.includes(tag)) {
-				this.availableTags = [...this.availableTags, tag];
-				this.tagColors = { ...this.tagColors, [tag]: this._getRandomTagColor() };
-			}
-		}
-		this.newCustomTag = '';
-	}
-
 	_getRandomTagColor() {
 		const colors = [
 			'#ef4444',
@@ -1067,7 +947,7 @@ class TodoStore {
 		e.dataTransfer.dropEffect = 'move';
 		if (this.draggedId !== id) {
 			this.dragOverId = id;
-			// Compute indicator position (top or bottom half of the target)
+
 			const target = /** @type {Element} */ (e.currentTarget);
 			const rect = target.getBoundingClientRect();
 			const y = e.clientY - rect.top;
@@ -1087,17 +967,27 @@ class TodoStore {
 	handleDrop(e, targetId) {
 		e.preventDefault();
 		const draggedId = this.draggedId;
+		const indicator = this.dragIndicatorPos;
+
 		this.dragOverId = null;
 		this.dragIndicatorPos = null;
+
 		if (draggedId === null || draggedId === targetId) return;
+
 		const fromIdx = this.todos.findIndex((t) => t.id === draggedId);
 		let toIdx = this.todos.findIndex((t) => t.id === targetId);
+
 		if (fromIdx === -1 || toIdx === -1) return;
+
 		// Remove dragged item
 		const [item] = this.todos.splice(fromIdx, 1);
+
 		// Adjust toIdx if removal shifted it
 		if (fromIdx < toIdx) toIdx--;
-		// Insert at target position — always place before the target (swap)
+
+		// Insert at target position based on indicator
+		if (indicator === 'after') toIdx++;
+
 		this.todos.splice(toIdx, 0, item);
 		this.draggedId = null;
 	}
@@ -1148,21 +1038,7 @@ class TodoStore {
 	 * @returns {string}
 	 */
 	getNextDueDate(currentDate, recurring) {
-		if (!currentDate || !recurring) return '';
-		const parts = currentDate.split('-');
-		const date = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-		switch (recurring) {
-			case 'daily':
-				date.setDate(date.getDate() + 1);
-				break;
-			case 'weekly':
-				date.setDate(date.getDate() + 7);
-				break;
-			case 'monthly':
-				date.setMonth(date.getMonth() + 1);
-				break;
-		}
-		return _localDateStr(date);
+		return getNextDueDate(currentDate, recurring);
 	}
 
 	// ── Upcoming due tasks computation ──
@@ -1173,14 +1049,7 @@ class TodoStore {
 	 * @returns {Todo[]}
 	 */
 	_computeUpcomingDue(todos) {
-		const todayStr = _localDateStr();
-		const twoDaysLater = new Date();
-		twoDaysLater.setDate(twoDaysLater.getDate() + 2);
-		const twoDaysStr = _localDateStr(twoDaysLater);
-
-		return todos
-			.filter((t) => !t.completed && t.dueDate && t.dueDate >= todayStr && t.dueDate <= twoDaysStr)
-			.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+		return computeUpcomingDue(todos);
 	}
 
 	// ── Notifications ──
@@ -1217,7 +1086,7 @@ class TodoStore {
 		if (typeof window === 'undefined' || !('Notification' in window)) return;
 		if (Notification.permission !== 'granted') return;
 
-		const today = _localDateStr();
+		const today = localDateStr();
 		const dueToday = this.todos.filter((t) => !t.completed && t.dueDate === today);
 		const overdue = this.todos.filter((t) => !t.completed && t.dueDate && t.dueDate < today);
 
@@ -1233,34 +1102,7 @@ class TodoStore {
 		}
 	}
 
-	// ── Quick Add from URL Params ──
-
-	/**
-	 * Apply URL query parameters to pre-fill the add form.
-	 * @param {{title?: string, desc?: string, due?: string, priority?: string, category?: string, tags?: string}} params
-	 */
-	applyQuickAdd(params) {
-		if (params.title !== undefined) this.newTitle = params.title;
-		if (params.desc !== undefined) this.newDescription = params.desc;
-		if (params.due !== undefined) this.newDueDate = params.due;
-		if (params.priority !== undefined) {
-			if (['high', 'medium', 'low'].includes(params.priority)) {
-				this.newPriority = params.priority;
-			}
-		}
-		if (params.category !== undefined) this.newCategory = params.category;
-		if (params.tags !== undefined) {
-			this.newTags = params.tags
-				.split(',')
-				.map((t) => t.trim())
-				.filter(Boolean);
-		}
-		this.showForm = true;
-		// Focus the title input after the DOM updates
-		setTimeout(() => document.getElementById('title-input')?.focus(), 50);
-	}
-
-	// ── Toast ──
+	// ── Notifications ──
 
 	/**
 	 * @param {string} message
@@ -1280,11 +1122,6 @@ class TodoStore {
 	 * @param {KeyboardEvent} e
 	 */
 	handleKeydown(e) {
-		if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-			e.preventDefault();
-			this.showForm = true;
-			setTimeout(() => document.getElementById('title-input')?.focus(), 50);
-		}
 		if (e.key === 'Escape') {
 			if (this.selectMode) {
 				this.selectMode = false;
@@ -1294,6 +1131,127 @@ class TodoStore {
 				this.archivedSelectMode = false;
 				this.selectedArchived = new SvelteSet();
 			}
+		}
+	}
+
+	// ── Cross-tab storage sync ──
+
+	/**
+	 * Handle storage events from other tabs.
+	 * @param {StorageEvent} e
+	 */
+	_handleStorageChange(e) {
+		if (e.key === 'todos') {
+			const todos = storageGet('todos');
+			if (todos && Array.isArray(todos)) {
+				this.todos = todos;
+				this.nextId = Math.max(...todos.map((t) => t.id)) + 1;
+			}
+		} else if (e.key === 'archivedTodos') {
+			const archived = storageGet('archivedTodos');
+			if (archived && Array.isArray(archived)) {
+				this.archivedTodos = archived;
+			}
+		} else if (e.key === 'darkMode') {
+			const dm = storageGet('darkMode');
+			if (dm !== null) {
+				this.darkMode = dm;
+			}
+		}
+	}
+
+	// ── Import / Export ──
+
+	/**
+	 * Export todos and archived todos as JSON string.
+	 * @returns {string} JSON string containing todos and archivedTodos
+	 */
+	exportTodos() {
+		return JSON.stringify(
+			{
+				todos: this.todos,
+				archivedTodos: this.archivedTodos,
+				exportedAt: new Date().toISOString()
+			},
+			null,
+			2
+		);
+	}
+
+	/**
+	 * Import todos from JSON string.
+	 * @param {string} json - JSON string containing todos and archivedTodos
+	 * @returns {{success: boolean, message: string}} Result object
+	 */
+	importTodos(json) {
+		try {
+			const data = JSON.parse(json);
+			if (!data || typeof data !== 'object') {
+				return { success: false, message: 'Invalid import format' };
+			}
+
+			let importedCount = 0;
+
+			// Import todos if present and valid
+			if (Array.isArray(data.todos)) {
+				// Validate and filter valid todos
+				const validTodos = data.todos.filter((t) => t && t.id && t.title);
+				if (validTodos.length > 0) {
+					// Collect all existing IDs (from both todos and archived)
+					const existingIds = new Set(this.todos.map((t) => t.id));
+					const existingArchivedIds = new Set(this.archivedTodos.map((t) => t.id));
+
+					// Process each todo and assign new IDs for conflicts
+					const adjustedNewTodos = validTodos.map((t) => {
+						let newId = t.id;
+						// Check both todos and archived for conflicts
+						while (existingIds.has(newId) || existingArchivedIds.has(newId)) {
+							newId = this.nextId++;
+						}
+						existingIds.add(newId);
+						return { ...t, id: newId };
+					});
+
+					this.todos = [...this.todos, ...adjustedNewTodos];
+					importedCount += adjustedNewTodos.length;
+				}
+			}
+
+			// Import archived todos if present and valid
+			if (Array.isArray(data.archivedTodos)) {
+				const validArchived = data.archivedTodos.filter((t) => t && t.id && t.title);
+				if (validArchived.length > 0) {
+					const existingIds = new Set(this.todos.map((t) => t.id));
+					const existingArchivedIds = new Set(this.archivedTodos.map((t) => t.id));
+
+					const adjustedArchived = validArchived.map((t) => {
+						let newId = t.id;
+						while (existingIds.has(newId) || existingArchivedIds.has(newId)) {
+							newId = this.nextId++;
+						}
+						existingIds.add(newId);
+						return { ...t, id: newId };
+					});
+
+					this.archivedTodos = [...this.archivedTodos, ...adjustedArchived];
+					importedCount += adjustedArchived.length;
+				}
+			}
+
+			// Return error if nothing was imported
+			if (importedCount === 0) {
+				return { success: false, message: 'No valid tasks found in import file' };
+			}
+
+			return {
+				success: true,
+				message: `Successfully imported ${importedCount} tasks`
+			};
+		} catch (error) {
+			return {
+				success: false,
+				message: `Import failed: ${error.message}`
+			};
 		}
 	}
 }

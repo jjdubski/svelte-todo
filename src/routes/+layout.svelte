@@ -1,7 +1,7 @@
 <script>
 	import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
-	import { createTodoStore } from '$lib/todoStore.svelte.js';
+	import { createTodoStore } from '$lib/state/todoStore.svelte.js';
 	import NavBar from '$lib/NavBar.svelte';
 
 	let { children } = $props();

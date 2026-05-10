@@ -1,6 +1,6 @@
 <script>
 	import { slide } from 'svelte/transition';
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import StatsBar from '$lib/StatsBar.svelte';
 	import { Archive, RotateCcw, Trash2, Calendar, CheckSquare, Square, X } from 'lucide-svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -15,7 +15,7 @@
 	style="background: linear-gradient(145deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%); transition: background 0.3s;"
 >
 	<div
-		class="w-full max-w-[900px] rounded-2xl border p-8 sm:rounded-xl sm:p-5 xl:max-w-[1100px] 2xl:max-w-[1300px]"
+		class="w-full max-w-[1080px] rounded-2xl border p-8 sm:rounded-xl sm:p-5 xl:max-w-[1100px] 2xl:max-w-[1300px]"
 		style="background: var(--card-bg); box-shadow: 0 8px 32px var(--shadow); border-color: var(--border); transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;"
 	>
 		<StatsBar />
@@ -39,10 +39,27 @@
 					</button>
 					{#if store.archivedSelectMode}
 						<div
-							class="absolute top-full left-0 z-50 mt-2 flex -translate-x-1/2 gap-1.5 rounded-xl border p-2 whitespace-nowrap shadow-lg"
+							class="absolute top-full right-0 z-50 mt-2 flex gap-1.5 rounded-xl border p-2 whitespace-nowrap shadow-lg"
 							style="background: var(--card-bg); border-color: var(--border);"
 							transition:slide={{ duration: store.prefersReducedMotion ? 0 : 150 }}
 						>
+							{#if store.selectedArchived.size === store.archivedTodos.length && store.archivedTodos.length > 0}
+								<button
+									class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-2.5 py-2 text-xs font-medium sm:text-sm"
+									style="background: var(--input-bg); color: var(--text-heading);"
+									onclick={() => store.deselectAllArchived()}
+								>
+									<Square size={14} /> Deselect All
+								</button>
+							{:else}
+								<button
+									class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-2.5 py-2 text-xs font-medium sm:text-sm"
+									style="background: var(--input-bg); color: var(--text-heading);"
+									onclick={() => store.selectAllArchived()}
+								>
+									<CheckSquare size={14} /> Select All
+								</button>
+							{/if}
 							<button
 								class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-2.5 py-2 text-xs font-medium sm:text-sm"
 								style="background: var(--btn-save); color: white;"

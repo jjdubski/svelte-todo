@@ -1,6 +1,7 @@
 <script>
 	import { page } from '$app/stores';
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
+	import { getFormState, createFormState } from '$lib/state/formState.svelte.js';
 	import TodoHeader from '$lib/TodoHeader.svelte';
 	import TodoForm from '$lib/TodoForm.svelte';
 	import TodoFilters from '$lib/TodoFilters.svelte';
@@ -10,6 +11,8 @@
 	import TodoEditModal from '$lib/TodoEditModal.svelte';
 
 	const store = getTodoStore();
+	// Instantiate form state for this page
+	const formStore = createFormState();
 
 	let editingTodo = $derived(store.todos.find((t) => t.id === store.editingTodoId));
 
@@ -52,19 +55,28 @@
 		}
 
 		if (hasParams) {
-			store.applyQuickAdd(qp);
+			formStore.applyQuickAdd(qp);
 		}
 	});
+
+	function handleKeydown(e) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+			e.preventDefault();
+			formStore.showForm = true;
+			setTimeout(() => document.getElementById('title-input')?.focus(), 50);
+		}
+		store.handleKeydown(e);
+	}
 </script>
 
-<svelte:window onkeydown={(e) => store.handleKeydown(e)} />
+<svelte:window onkeydown={handleKeydown} />
 
 <div
 	class="flex min-h-dvh justify-center p-4"
 	style="background: linear-gradient(145deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%); transition: background 0.3s;"
 >
 	<div
-		class="w-full max-w-[900px] rounded-2xl border p-5 sm:rounded-xl xl:max-w-[1100px] 2xl:max-w-[1300px]"
+		class="w-full max-w-[1080px] rounded-2xl border p-5 sm:rounded-xl xl:max-w-[1100px] 2xl:max-w-[1300px]"
 		style="background: var(--card-bg); box-shadow: 0 8px 32px var(--shadow); border-color: var(--border); transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;"
 	>
 		<TodoHeader />

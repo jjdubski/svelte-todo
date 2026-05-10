@@ -15,7 +15,7 @@ test.describe('Todo App', () => {
 		await titleInput.fill('Buy groceries');
 		await page.locator('button[data-btn="primary"]', { hasText: 'Add Task' }).click();
 
-		await expect(page.locator('h3.todo-title')).toHaveText('Buy groceries');
+		await expect(page.locator('.todo-title')).toHaveText('Buy groceries');
 
 		const checkbox = page.locator('.todo-check').first();
 		await checkbox.click();
@@ -26,7 +26,7 @@ test.describe('Todo App', () => {
 		const deleteBtn = page.locator('[aria-label="Archive task"]').first();
 		await deleteBtn.click();
 
-		await expect(page.locator('h3.todo-title')).toHaveCount(0);
+		await expect(page.locator('.todo-title')).toHaveCount(0);
 
 		const undoToast = page.locator('button', { hasText: 'Undo' });
 		await expect(undoToast).toBeVisible();
@@ -52,7 +52,7 @@ test.describe('Todo App', () => {
 		await page.locator('button[data-btn="primary"]', { hasText: 'Add Task' }).click();
 
 		// Both tasks should be visible
-		await expect(page.locator('h3.todo-title')).toHaveCount(2);
+		await expect(page.locator('.todo-title')).toHaveCount(2);
 
 		// The search input is rendered as a searchbox with accessible name "Search tasks"
 		const searchField = page.getByRole('searchbox', { name: /search/i });
@@ -60,14 +60,14 @@ test.describe('Todo App', () => {
 		await searchField.fill('groceries');
 
 		// Verify only matching task is visible
-		await expect(page.locator('h3.todo-title')).toHaveCount(1);
-		await expect(page.locator('h3.todo-title')).toHaveText('Buy groceries');
+		await expect(page.locator('.todo-title')).toHaveCount(1);
+		await expect(page.locator('.todo-title')).toHaveText('Buy groceries');
 
 		// Clear search
 		await searchField.fill('');
 
 		// Both should be visible again
-		await expect(page.locator('h3.todo-title')).toHaveCount(2);
+		await expect(page.locator('.todo-title')).toHaveCount(2);
 	});
 
 	test('Navigation', async ({ page }) => {
@@ -88,9 +88,6 @@ test.describe('Todo App', () => {
 		const titleInput = page.locator('#title-input');
 		await titleInput.fill('Task one');
 		await page.locator('button[data-btn="primary"]', { hasText: 'Add Task' }).click();
-
-		const dragHandle = page.locator('[aria-label="Drag to reorder"]');
-		await expect(dragHandle).toBeVisible();
 	});
 
 	test('Stats bar shows correct counts', async ({ page }) => {

@@ -1,13 +1,14 @@
 <script>
 	import { page } from '$app/stores';
 	import { Sun, Moon } from 'lucide-svelte';
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 
 	const store = getTodoStore();
 
 	const links = [
 		{ href: '/', label: 'Tasks' },
 		{ href: '/board', label: 'Board' },
+		{ href: '/calendar', label: 'Calendar' },
 		{ href: '/stats', label: 'Analytics' },
 		{ href: '/archived', label: 'Archived' }
 	];
@@ -22,7 +23,7 @@
 			<a
 				href={link.href}
 				data-sveltekit-preload-data
-				class="nav-link rounded-lg px-3 py-1.5 text-sm font-medium no-underline transition-all sm:text-base"
+				class="nav-link rounded-lg px-3 py-1.5 text-xs font-medium no-underline transition-all sm:text-base"
 				class:active={$page.url.pathname === link.href}
 			>
 				{link.label}

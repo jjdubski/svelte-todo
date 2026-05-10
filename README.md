@@ -94,11 +94,12 @@ src/
 │   ├── assets/
 │   │   └── favicon.svg
 │   ├── index.js               # Library barrel export
-│   ├── markdown.js            # Zero-dep markdown renderer
+│   ├── scripts/
+│   │   ├── markdown.js            # Zero-dep markdown renderer
 │   ├── NavBar.svelte          # Navigation bar (Tasks / Board / Analytics / Archived)
 │   ├── SkeletonLoader.svelte  # Animated loading placeholder
 │   ├── StatsBar.svelte        # Spring-animated stat counters
-│   ├── storage.js             # Safe localStorage wrapper with error handling
+│   │   └── storage.js             # Safe localStorage wrapper with error handling
 │   ├── Toast.svelte           # Toast notification with undo support
 │   ├── Todo.svelte            # Single todo item (view, edit, subtasks, drag, markdown)
 │   ├── TodoFilters.svelte     # Search, filter, sort, category pills, batch select
@@ -106,7 +107,8 @@ src/
 │   ├── TodoEditModal.svelte   # Modal for full editing of existing tasks
 │   ├── TodoHeader.svelte      # App title + dark mode toggle
 │   ├── TodoList.svelte        # Renders filtered list with loading/empty/due states
-│   └── todoStore.svelte.js    # Central store (class + createContext) — all state & logic
+│   └── state/
+│       └── todoStore.svelte.js    # Central store (class + createContext) — all state & logic
 ├── routes/
 │   ├── +layout.svelte         # Root layout (creates store, renders NavBar + page content)
 │   ├── +page.svelte           # Main list view (orchestrates header, form, filters, list)
@@ -122,18 +124,18 @@ e2e/
 
 ### Key files
 
-| File                           | Purpose                                                                |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| `src/lib/todoStore.svelte.js`  | Central store: class with `$state` fields, exposed via `createContext` |
-| `src/lib/Todo.svelte`          | Single todo with inline editing, subtasks, drag handle, markdown       |
-| `src/lib/TodoForm.svelte`      | Add-task form with templates, tags, subtasks                           |
-| `src/lib/TodoFilters.svelte`   | Search, filter, sort, category pills, batch select                     |
-| `src/lib/TodoEditModal.svelte` | Modal for editing tasks (title, description, due, priority, category)  |
-| `src/lib/TodoList.svelte`      | Renders filtered list with differentiated empty states                 |
-| `src/lib/NavBar.svelte`        | Route navigation with active-state highlighting                        |
-| `src/lib/storage.js`           | Safe localStorage wrapper with error handling                          |
-| `src/lib/markdown.js`          | Zero-dependency markdown renderer                                      |
-| `src/app.css`                  | CSS custom properties, Tailwind imports, glow animations               |
+| File                                | Purpose                                                                |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| `src/lib/state/todoStore.svelte.js` | Central store: class with `$state` fields, exposed via `createContext` |
+| `src/lib/Todo.svelte`               | Single todo with inline editing, subtasks, drag handle, markdown       |
+| `src/lib/TodoForm.svelte`           | Add-task form with templates, tags, subtasks                           |
+| `src/lib/TodoFilters.svelte`        | Search, filter, sort, category pills, batch select                     |
+| `src/lib/TodoEditModal.svelte`      | Modal for editing tasks (title, description, due, priority, category)  |
+| `src/lib/TodoList.svelte`           | Renders filtered list with differentiated empty states                 |
+| `src/lib/NavBar.svelte`             | Route navigation with active-state highlighting                        |
+| `src/lib/scripts/storage.js`        | Safe localStorage wrapper with error handling                          |
+| `src/lib/scripts/markdown.js`       | Zero-dependency markdown renderer                                      |
+| `src/app.css`                       | CSS custom properties, Tailwind imports, glow animations               |
 
 ---
 

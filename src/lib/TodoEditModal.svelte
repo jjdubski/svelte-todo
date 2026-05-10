@@ -2,9 +2,9 @@
 	import { fade, scale } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
 	import { Tag, X } from 'lucide-svelte';
-	import { getTodoStore } from '$lib/todoStore.svelte.js';
+	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 
-	/** @type {import('./todoStore.svelte.js').Todo} */
+	/** @type {import('./state/todoStore.svelte.js').Todo} */
 	let { todo } = $props();
 
 	const store = getTodoStore();
