@@ -3,6 +3,10 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
+// Default optional public env vars so $env/static/public doesn't fail at build time.
+// Users override these in their .env file when enabling the corresponding feature.
+process.env.PUBLIC_APPLE_ENABLED = process.env.PUBLIC_APPLE_ENABLED || 'false';
+
 export default defineConfig({
 	plugins: [
 		sveltekit(),

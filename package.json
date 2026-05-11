@@ -42,7 +42,11 @@
 		"vitest": "^4.1.5"
 	},
 	"dependencies": {
+		"@auth/core": "^0.41.2",
+		"@auth/sveltekit": "^1.11.2",
+		"@sveltejs/adapter-vercel": "^6.3.3",
 		"date-fns": "^4.1.0",
-		"lucide-svelte": "^1.0.1"
+		"lucide-svelte": "^1.0.1",
+		"mongoose": "^9.6.2"
 	}
 }

@@ -61,3 +61,63 @@ export function storageRemove(key) {
 		console.warn(`[storage] remove("${key}") failed:`, e);
 	}
 }
+
+/**
+ * Check if user is in guest mode.
+ * @returns {boolean}
+ */
+export function isGuestMode() {
+	try {
+		return localStorage.getItem('authMode') === 'guest';
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Get all guest data from localStorage for migration.
+ * @returns {Record<string,any>}
+ */
+export function getGuestData() {
+	try {
+		return {
+			todos: storageGet('todos') || [],
+			archivedTodos: storageGet('archivedTodos') || [],
+			categories: storageGet('categories'),
+			categoryColors: storageGet('categoryColors'),
+			availableTags: storageGet('availableTags'),
+			tagColors: storageGet('tagColors'),
+			templates: storageGet('templates'),
+			darkMode: storageGet('darkMode')
+		};
+	} catch {
+		return {};
+	}
+}
+
+/**
+ * Clear all guest data from localStorage.
+ */
+export function clearGuestData() {
+	try {
+		localStorage.removeItem('authMode');
+		localStorage.removeItem('todos');
+		localStorage.removeItem('archivedTodos');
+		localStorage.removeItem('categories');
+		localStorage.removeItem('categoryColors');
+		localStorage.removeItem('availableTags');
+		localStorage.removeItem('tagColors');
+		localStorage.removeItem('templates');
+		localStorage.removeItem('darkMode');
+		localStorage.removeItem('filterText');
+		localStorage.removeItem('filterStatus');
+		localStorage.removeItem('filterCategory');
+		localStorage.removeItem('sortBy');
+		localStorage.removeItem('filterTags');
+		localStorage.removeItem('filterPriority');
+		localStorage.removeItem('filterDateFrom');
+		localStorage.removeItem('filterDateTo');
+	} catch {
+		// ignore
+	}
+}

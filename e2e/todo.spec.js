@@ -2,9 +2,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Todo App', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/');
-		await page.evaluate(() => localStorage.clear());
-		await page.reload();
+		// Set guest mode before any page JavaScript loads
+		await page.addInitScript(() => {
+			localStorage.clear();
+			localStorage.setItem('authMode', JSON.stringify('guest'));
+		});
+		await page.goto('/tasks');
 		await page.waitForSelector('#title-input', { timeout: 10000 });
 	});
 
@@ -80,7 +83,7 @@ test.describe('Todo App', () => {
 		await expect(page.locator('h3', { hasText: 'Completion Rate' })).toBeVisible();
 
 		await page.locator('a.nav-link', { hasText: 'Tasks' }).click();
-		await expect(page).toHaveURL(/\/$/);
+		await expect(page).toHaveURL(/\/tasks/);
 		await expect(page.locator('#title-input')).toBeVisible();
 	});
 
@@ -108,5 +111,43 @@ test.describe('Todo App', () => {
 
 		const activeCount = activeSection.locator('span').first();
 		await expect(activeCount).toHaveText('2');
+	});
+
+	// ── New E2E Tests for Auth ──
+
+	test.describe('Authentication UI', () => {
+		test('Login page is shown for unauthenticated users', async ({ page }) => {
+			// Clear localStorage before page loads to simulate unauthenticated user
+			await page.addInitScript(() => {
+				localStorage.clear();
+			});
+			await page.goto('/');
+			// Should see login options
+			await expect(page.locator('text=Continue as Guest')).toBeVisible({ timeout: 10000 });
+			// Should see Google sign-in button
+			await expect(page.locator('text=Google')).toBeVisible();
+		});
+
+		test('Guest mode continues to todo list', async ({ page }) => {
+			// Start with no auth state
+			await page.addInitScript(() => {
+				localStorage.clear();
+			});
+			await page.goto('/');
+			await page.waitForTimeout(1000); // let JS init
+			await page.locator('text=Continue as Guest').click();
+			await page.waitForURL(/\/tasks/);
+			await expect(page.locator('#title-input')).toBeVisible({ timeout: 10000 });
+		});
+
+		test('Tasks page accessible via /tasks in guest mode', async ({ page }) => {
+			await page.addInitScript(() => {
+				localStorage.clear();
+				localStorage.setItem('authMode', JSON.stringify('guest'));
+			});
+			await page.goto('/tasks');
+			await page.waitForSelector('#title-input', { timeout: 10000 });
+			await expect(page.locator('h1')).toHaveText('Todo List');
+		});
 	});
 });

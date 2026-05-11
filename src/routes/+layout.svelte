@@ -2,12 +2,16 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import '../app.css';
 	import { createTodoStore } from '$lib/state/todoStore.svelte.js';
+	import { createAuthStore } from '$lib/state/authStore.svelte.js';
 	import NavBar from '$lib/components/NavBar.svelte';
+	import MigrationDialog from '$lib/components/MigrationDialog.svelte';
 
 	let { children } = $props();
 
-	// Initialize the todo store and set it in context for all child routes
-	const _store = createTodoStore();
+	// Initialize stores and wire auth into todo store for API sync
+	const _todoStore = createTodoStore();
+	const _authStore = createAuthStore();
+	_todoStore.setAuthStore(_authStore);
 </script>
 
 <svelte:head>
@@ -24,3 +28,4 @@
 <main id="main-content">
 	{@render children()}
 </main>
+<MigrationDialog />

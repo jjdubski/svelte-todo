@@ -1,0 +1,30 @@
+import { json, error } from '@sveltejs/kit';
+import { batchArchive } from '$lib/server/todoService.js';
+
+/**
+ * POST /api/todos/archive — Batch archive todos.
+ * Requires authentication.
+ * @param {import('@sveltejs/kit').RequestEvent} event
+ * @returns {Promise<Response>}
+ */
+export async function POST(event) {
+	try {
+		const session = await event.locals.auth();
+		if (!session?.user?.authUserId) {
+			return error(401, 'Unauthorized');
+		}
+
+		const body = await event.request.json();
+		const { ids } = body;
+
+		if (!Array.isArray(ids) || ids.length === 0) {
+			return error(400, 'ids must be a non-empty array');
+		}
+
+		const archived = await batchArchive(session.user.authUserId, ids);
+		return json({ archived });
+	} catch (err) {
+		console.error('[api] POST /api/todos/archive failed:', err);
+		return error(500, 'Internal server error');
+	}
+}

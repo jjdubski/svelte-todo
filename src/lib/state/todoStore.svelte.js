@@ -176,6 +176,7 @@ class TodoStore {
 		const todo = this.todos.find((t) => t.id === id);
 		if (todo) {
 			todo.category = todo.category === category ? '' : category; // toggle
+			this._syncUpdate(id, { category: todo.category });
 		}
 	}
 
@@ -192,6 +193,7 @@ class TodoStore {
 			} else {
 				todo.tags = [...tags, tag]; // add
 			}
+			this._syncUpdate(id, { tags: todo.tags });
 		}
 	}
 
@@ -245,6 +247,10 @@ class TodoStore {
 
 	/** @type {boolean} */
 	storageError = $state(false);
+
+	// ── Auth store reference (set by layout after initialization) ──
+	/** @type {import('./authStore.svelte.js').AuthStore|null} */
+	_auth = null;
 
 	constructor() {
 		this._init();
@@ -560,6 +566,88 @@ class TodoStore {
 		return result;
 	}
 
+	// ── Auth store reference ──
+
+	/**
+	 * @param {import('./authStore.svelte.js').AuthStore} auth
+	 */
+	setAuthStore(auth) {
+		this._auth = auth;
+	}
+
+	// ── API sync helpers ──
+
+	/**
+	 * Fire-and-forget API call to sync local changes to the server.
+	 * Only fires when user is signed in. Errors show a toast.
+	 * @param {string} method
+	 * @param {string} url
+	 * @param {object} [body]
+	 */
+	async _syncToApi(method, url, body) {
+		if (!this._auth?.isLoggedIn) return;
+		try {
+			const res = await fetch(url, {
+				method,
+				headers: { 'Content-Type': 'application/json' },
+				body: body ? JSON.stringify(body) : undefined
+			});
+			// Session expired — redirect to login
+			if (res.status === 401) {
+				this._auth?.clearGuestMode();
+				window.location.href = '/';
+				return;
+			}
+			if (!res.ok) {
+				this.showToast('Could not sync to cloud. Your changes are saved locally.', 'warning');
+			}
+		} catch {
+			this.showToast('Could not sync to cloud. Your changes are saved locally.', 'warning');
+		}
+	}
+
+	/**
+	 * Sync a newly created todo.
+	 * @param {Todo} todo
+	 */
+	_syncCreate(todo) {
+		this._syncToApi('POST', '/api/todos', todo);
+	}
+
+	/**
+	 * Sync an updated todo.
+	 * @param {number} id
+	 * @param {Partial<Todo>} updates
+	 */
+	_syncUpdate(id, updates) {
+		this._syncToApi('PUT', `/api/todos/${id}`, updates);
+	}
+
+	/**
+	 * Sync a deletion (archive) of a todo.
+	 * @param {number} id
+	 */
+	_syncDelete(id) {
+		this._syncToApi('DELETE', `/api/todos/${id}`);
+	}
+
+	/**
+	 * Sync a batch operation (archive/restore).
+	 * @param {string} url
+	 * @param {number[]} ids
+	 */
+	_syncBatch(url, ids) {
+		this._syncToApi('POST', url, { ids });
+	}
+
+	/**
+	 * Sync a permanent deletion.
+	 * @param {number} id
+	 */
+	_syncPermanentDelete(id) {
+		this._syncToApi('POST', '/api/todos/permanent-delete', { id });
+	}
+
 	// ── Todo CRUD ──
 
 	/**
@@ -573,7 +661,7 @@ class TodoStore {
 	 * @param {Array<{text:string, done:boolean}>} [subtasks]
 	 */
 	addTodo(title, description, dueDate, priority, category, tags, recurring, subtasks) {
-		this.todos.push({
+		const todo = {
 			id: this.nextId++,
 			title,
 			description,
@@ -585,7 +673,9 @@ class TodoStore {
 			subtasks: subtasks?.filter((s) => s.text.trim()) || [],
 			completed: false,
 			createdAt: new Date().toISOString()
-		});
+		};
+		this.todos.push(todo);
+		this._syncCreate(todo);
 	}
 
 	/**
@@ -596,6 +686,7 @@ class TodoStore {
 		const todo = this.todos.find((t) => t.id === id);
 		if (todo) {
 			Object.assign(todo, updates);
+			this._syncUpdate(id, updates);
 		}
 	}
 
@@ -609,11 +700,13 @@ class TodoStore {
 			this.archivedTodos = [...this.archivedTodos, todo];
 			this.lastArchivedTodos = [todo];
 			this.showToast('Task archived', 'info');
+			this._syncDelete(id);
 		}
 	}
 
 	undoArchive() {
 		if (this.lastArchivedTodos.length > 0) {
+			const ids = this.lastArchivedTodos.map((t) => t.id);
 			const count = this.lastArchivedTodos.length;
 			for (const todo of this.lastArchivedTodos) {
 				const idx = this.archivedTodos.findIndex((t) => t.id === todo.id);
@@ -624,11 +717,13 @@ class TodoStore {
 			}
 			this.lastArchivedTodos = [];
 			this.showToast(`${count} task${count > 1 ? 's' : ''} restored`, 'success');
+			this._syncBatch('/api/todos/restore', ids);
 		}
 	}
 
 	undoComplete() {
 		if (this.lastCompletedTodos.length > 0) {
+			const ids = this.lastCompletedTodos.map((t) => t.id);
 			const count = this.lastCompletedTodos.length;
 			this.todos = this.todos.map((t) => {
 				const undone = this.lastCompletedTodos.find((u) => u.id === t.id);
@@ -641,6 +736,9 @@ class TodoStore {
 			});
 			this.lastCompletedTodos = [];
 			this.showToast(`${count} task${count > 1 ? 's' : ''} reverted`, 'success');
+			for (const id of ids) {
+				this._syncUpdate(id, { completed: false });
+			}
 		}
 	}
 
@@ -653,6 +751,7 @@ class TodoStore {
 			const [todo] = this.archivedTodos.splice(index, 1);
 			this.todos = [...this.todos, todo];
 			this.showToast('Task restored', 'success');
+			this._syncBatch('/api/todos/restore', [id]);
 		}
 	}
 
@@ -664,11 +763,13 @@ class TodoStore {
 		if (index !== -1) {
 			this.archivedTodos.splice(index, 1);
 			this.showToast('Task permanently deleted', 'info');
+			this._syncPermanentDelete(id);
 		}
 	}
 
 	archiveSelected() {
 		const count = this.selectedTodos.size;
+		const ids = [...this.selectedTodos];
 		const archived = this.todos.filter((t) => this.selectedTodos.has(t.id));
 		this.lastArchivedTodos = archived;
 		this.todos = this.todos.filter((t) => !this.selectedTodos.has(t.id));
@@ -676,6 +777,7 @@ class TodoStore {
 		this.showToast(`${count} tasks archived`, 'info');
 		this.selectedTodos = new SvelteSet();
 		this.selectMode = false;
+		this._syncBatch('/api/todos/archive', ids);
 	}
 
 	/**
@@ -697,8 +799,10 @@ class TodoStore {
 				const copy = this._createRecurringCopy(todo);
 				if (copy) {
 					this.todos.push(copy);
+					this._syncCreate(copy);
 				}
 			}
+			this._syncUpdate(id, { completed: todo.completed, completedAt: todo.completedAt });
 		}
 	}
 
@@ -716,6 +820,7 @@ class TodoStore {
 			} else {
 				todo.tags = [...tags, tag];
 			}
+			this._syncUpdate(id, { tags: todo.tags });
 		}
 	}
 
@@ -764,21 +869,27 @@ class TodoStore {
 	restoreSelectedArchived() {
 		const count = this.selectedArchived.size;
 		if (count === 0) return;
+		const ids = [...this.selectedArchived];
 		const toRestore = this.archivedTodos.filter((t) => this.selectedArchived.has(t.id));
 		this.todos = [...this.todos, ...toRestore];
 		this.archivedTodos = this.archivedTodos.filter((t) => !this.selectedArchived.has(t.id));
 		this.showToast(`${count} task${count > 1 ? 's' : ''} restored`, 'success');
 		this.selectedArchived = new SvelteSet();
 		this.archivedSelectMode = false;
+		this._syncBatch('/api/todos/restore', ids);
 	}
 
 	permanentDeleteSelectedArchived() {
 		const count = this.selectedArchived.size;
 		if (count === 0) return;
+		const ids = [...this.selectedArchived];
 		this.archivedTodos = this.archivedTodos.filter((t) => !this.selectedArchived.has(t.id));
 		this.showToast(`${count} task${count > 1 ? 's' : ''} permanently deleted`, 'info');
 		this.selectedArchived = new SvelteSet();
 		this.archivedSelectMode = false;
+		for (const id of ids) {
+			this._syncPermanentDelete(id);
+		}
 	}
 
 	/**
@@ -807,6 +918,7 @@ class TodoStore {
 
 	completeSelected() {
 		const count = this.selectedTodos.size;
+		const ids = [...this.selectedTodos];
 		this.lastCompletedTodos = this.todos.filter((t) => this.selectedTodos.has(t.id));
 		// Mark selected todos as completed
 		this.todos = this.todos.map((t) =>
@@ -824,10 +936,16 @@ class TodoStore {
 		}
 		if (recurringCopies.length > 0) {
 			this.todos = [...this.todos, ...recurringCopies];
+			for (const copy of recurringCopies) {
+				this._syncCreate(copy);
+			}
 		}
 		this.showToast(`${count} tasks completed`, 'info');
 		this.selectedTodos = new SvelteSet();
 		this.selectMode = false;
+		for (const id of ids) {
+			this._syncUpdate(id, { completed: true, completedAt: new Date().toISOString() });
+		}
 	}
 
 	// ── Category management ──

@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { storageGet, storageSet, storageRemove, storageAvailable } from '../scripts/storage.js';
+import {
+	storageGet,
+	storageSet,
+	storageRemove,
+	storageAvailable,
+	isGuestMode,
+	getGuestData,
+	clearGuestData
+} from '../scripts/storage.js';
 
 describe('storage', () => {
 	let mockStore = {};
@@ -115,13 +123,144 @@ describe('storage', () => {
 		});
 	});
 
+	// ── New storage helpers ──
+
+	describe('isGuestMode', () => {
+		it('returns true when authMode is "guest" (raw value)', () => {
+			// isGuestMode uses localStorage.getItem directly (not storageGet),
+			// so it compares the raw string value without JSON parsing.
+			mockStore['authMode'] = 'guest';
+			const result = isGuestMode();
+			expect(result).toBe(true);
+		});
+
+		it('returns false when authMode is not set', () => {
+			const result = isGuestMode();
+			expect(result).toBe(false);
+		});
+
+		it('returns false when authMode is some other raw value', () => {
+			mockStore['authMode'] = 'signed-in';
+			const result = isGuestMode();
+			expect(result).toBe(false);
+		});
+
+		it('returns false on localStorage error', () => {
+			localStorage.getItem.mockImplementationOnce(() => {
+				throw new Error('access denied');
+			});
+			const result = isGuestMode();
+			expect(result).toBe(false);
+		});
+	});
+
+	describe('getGuestData', () => {
+		it('returns all guest data fields', () => {
+			mockStore['todos'] = JSON.stringify([{ id: 1, title: 'Test' }]);
+			mockStore['archivedTodos'] = JSON.stringify([{ id: 2, title: 'Archived' }]);
+			mockStore['categories'] = JSON.stringify(['Work', 'Personal']);
+			mockStore['categoryColors'] = JSON.stringify({ Work: '#3b82f6' });
+			mockStore['availableTags'] = JSON.stringify(['urgent']);
+			mockStore['tagColors'] = JSON.stringify({ urgent: '#ef4444' });
+			mockStore['templates'] = JSON.stringify([{ name: 'Meeting' }]);
+			mockStore['darkMode'] = JSON.stringify(true);
+
+			const data = getGuestData();
+			expect(data).toEqual({
+				todos: [{ id: 1, title: 'Test' }],
+				archivedTodos: [{ id: 2, title: 'Archived' }],
+				categories: ['Work', 'Personal'],
+				categoryColors: { Work: '#3b82f6' },
+				availableTags: ['urgent'],
+				tagColors: { urgent: '#ef4444' },
+				templates: [{ name: 'Meeting' }],
+				darkMode: true
+			});
+		});
+
+		it('returns empty arrays for missing todos/archivedTodos', () => {
+			const data = getGuestData();
+			expect(data.todos).toEqual([]);
+			expect(data.archivedTodos).toEqual([]);
+		});
+
+		it('returns null for missing optional fields', () => {
+			const data = getGuestData();
+			expect(data.categories).toBeNull();
+			expect(data.darkMode).toBeNull();
+		});
+
+		it('handles localStorage errors gracefully (storageGet catches internally)', () => {
+			// storageGet catches errors from localStorage.getItem and returns null;
+			// getGuestData's outer try/catch is a safety net for non-storageGet errors.
+			localStorage.getItem.mockImplementation(() => {
+				throw new Error('storage error');
+			});
+			const data = getGuestData();
+			// storageGet catches the error, warns, and returns null for each key.
+			// Then || [] converts null to [] for todos/archivedTodos.
+			expect(data.todos).toEqual([]);
+			expect(data.archivedTodos).toEqual([]);
+			expect(data.categories).toBeNull();
+			expect(data.darkMode).toBeNull();
+		});
+	});
+
+	describe('clearGuestData', () => {
+		it('removes all auth and todo keys', () => {
+			mockStore['authMode'] = JSON.stringify('guest');
+			mockStore['todos'] = JSON.stringify([{ id: 1, title: 'Test' }]);
+			mockStore['archivedTodos'] = JSON.stringify([]);
+			mockStore['categories'] = JSON.stringify(['Work']);
+			mockStore['categoryColors'] = JSON.stringify({});
+			mockStore['availableTags'] = JSON.stringify([]);
+			mockStore['tagColors'] = JSON.stringify({});
+			mockStore['templates'] = JSON.stringify([]);
+			mockStore['darkMode'] = JSON.stringify(false);
+			mockStore['filterText'] = JSON.stringify('');
+			mockStore['filterStatus'] = JSON.stringify('all');
+			mockStore['filterCategory'] = JSON.stringify('');
+			mockStore['sortBy'] = JSON.stringify('manual');
+			mockStore['filterTags'] = JSON.stringify([]);
+			mockStore['filterPriority'] = JSON.stringify('all');
+			mockStore['filterDateFrom'] = JSON.stringify('');
+			mockStore['filterDateTo'] = JSON.stringify('');
+
+			clearGuestData();
+
+			expect(mockStore['authMode']).toBeUndefined();
+			expect(mockStore['todos']).toBeUndefined();
+			expect(mockStore['archivedTodos']).toBeUndefined();
+			expect(mockStore['categories']).toBeUndefined();
+			expect(mockStore['categoryColors']).toBeUndefined();
+			expect(mockStore['availableTags']).toBeUndefined();
+			expect(mockStore['tagColors']).toBeUndefined();
+			expect(mockStore['templates']).toBeUndefined();
+			expect(mockStore['darkMode']).toBeUndefined();
+			expect(mockStore['filterText']).toBeUndefined();
+			expect(mockStore['filterStatus']).toBeUndefined();
+			expect(mockStore['filterCategory']).toBeUndefined();
+			expect(mockStore['sortBy']).toBeUndefined();
+			expect(mockStore['filterTags']).toBeUndefined();
+			expect(mockStore['filterPriority']).toBeUndefined();
+			expect(mockStore['filterDateFrom']).toBeUndefined();
+			expect(mockStore['filterDateTo']).toBeUndefined();
+		});
+
+		it('does not throw when localStorage.removeItem throws', () => {
+			localStorage.removeItem.mockImplementation(() => {
+				throw new Error('denied');
+			});
+			expect(() => clearGuestData()).not.toThrow();
+		});
+	});
+
 	describe('SSR safety (no localStorage)', () => {
 		beforeEach(() => {
 			vi.unstubAllGlobals();
 		});
 
 		it('storageGet returns null when localStorage is undefined (SSR)', () => {
-			// Ensure localStorage is truly not defined
 			const result = storageGet('anykey');
 			expect(result).toBeNull();
 		});
@@ -137,6 +276,24 @@ describe('storage', () => {
 		it('storageAvailable returns false when localStorage is undefined (SSR)', () => {
 			const result = storageAvailable();
 			expect(result).toBe(false);
+		});
+
+		it('isGuestMode returns false when localStorage is undefined (SSR)', () => {
+			const result = isGuestMode();
+			expect(result).toBe(false);
+		});
+
+		it('getGuestData fields are null/[] when localStorage is undefined (SSR)', () => {
+			const result = getGuestData();
+			// storageGet returns null when localStorage is undefined
+			expect(result.todos).toEqual([]); // null || [] = []
+			expect(result.archivedTodos).toEqual([]);
+			expect(result.categories).toBeNull();
+			expect(result.darkMode).toBeNull();
+		});
+
+		it('clearGuestData does not throw when localStorage is undefined (SSR)', () => {
+			expect(() => clearGuestData()).not.toThrow();
 		});
 	});
 });
