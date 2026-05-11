@@ -210,15 +210,59 @@ export async function batchRestore(authUserId, todoIds) {
  */
 export async function migrateGuestData(authUserId, guestData) {
 	const user = await _getUser(authUserId);
+	const usedIds = new Set([
+		...(Array.isArray(user.todos) ? user.todos.map((t) => t.id) : []),
+		...(Array.isArray(user.archivedTodos) ? user.archivedTodos.map((t) => t.id) : [])
+	]);
+
+	/**
+	 * Assign a unique positive numeric ID for migrated todos.
+	 * Preserves incoming ID when possible; remaps collisions.
+	 * @param {any} incomingId
+	 * @returns {number}
+	 */
+	const assignUniqueId = (incomingId) => {
+		const parsed =
+			typeof incomingId === 'number' && Number.isInteger(incomingId) && incomingId > 0
+				? incomingId
+				: null;
+
+		if (parsed !== null && !usedIds.has(parsed)) {
+			usedIds.add(parsed);
+			if (parsed >= user.nextId) {
+				user.nextId = parsed + 1;
+			}
+			return parsed;
+		}
+
+		let id = user.nextId;
+		while (usedIds.has(id)) {
+			id += 1;
+		}
+		usedIds.add(id);
+		user.nextId = id + 1;
+		return id;
+	};
+
+	/**
+	 * @param {any[]} source
+	 * @param {any[]} target
+	 */
+	const mergeTodos = (source, target) => {
+		for (const todo of source) {
+			if (!todo || typeof todo !== 'object') continue;
+			target.push({ ...todo, id: assignUniqueId(todo.id) });
+		}
+	};
 
 	// Merge todos
 	if (Array.isArray(guestData.todos)) {
-		user.todos.push(...guestData.todos);
+		mergeTodos(guestData.todos, user.todos);
 	}
 
 	// Merge archivedTodos
 	if (Array.isArray(guestData.archivedTodos)) {
-		user.archivedTodos.push(...guestData.archivedTodos);
+		mergeTodos(guestData.archivedTodos, user.archivedTodos);
 	}
 
 	// Merge custom tags (dedup)
@@ -237,20 +281,6 @@ export async function migrateGuestData(authUserId, guestData) {
 		for (const [key, value] of Object.entries(guestData.tagColors)) {
 			user.tagColors.set(key, value);
 		}
-	}
-
-	// Update nextId if guest data has higher IDs
-	const maxGuestId = Math.max(
-		0,
-		...(Array.isArray(guestData.todos)
-			? guestData.todos.map((/** @type {any} */ t) => t.id || 0)
-			: []),
-		...(Array.isArray(guestData.archivedTodos)
-			? guestData.archivedTodos.map((/** @type {any} */ t) => t.id || 0)
-			: [])
-	);
-	if (maxGuestId >= user.nextId) {
-		user.nextId = maxGuestId + 1;
 	}
 
 	await user.save();

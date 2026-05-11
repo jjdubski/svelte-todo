@@ -98,6 +98,7 @@ export function getGuestData() {
 export function clearGuestData() {
 	try {
 		localStorage.removeItem('authMode');
+		localStorage.removeItem('_localDataSynced');
 		localStorage.removeItem('todos');
 		localStorage.removeItem('archivedTodos');
 		localStorage.removeItem('categories');

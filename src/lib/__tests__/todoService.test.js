@@ -399,6 +399,31 @@ describe('todoService', () => {
 			expect(mockUser.nextId).toBe(50);
 		});
 
+		it('remaps guest IDs that conflict with existing user IDs', async () => {
+			const mockUser = createMockUser({
+				nextId: 5,
+				todos: [{ id: 1, title: 'Existing', completed: false, createdAt: '2025-01-01' }],
+				archivedTodos: [
+					{ id: 2, title: 'Archived Existing', completed: true, createdAt: '2025-01-01' }
+				]
+			});
+			mockFindOne.mockResolvedValue(mockUser);
+
+			await migrateGuestData('test-user-id', {
+				todos: [{ id: 1, title: 'Guest Duplicate', completed: false, createdAt: '2025-01-02' }],
+				archivedTodos: [
+					{ id: 2, title: 'Guest Archived Duplicate', completed: true, createdAt: '2025-01-03' }
+				]
+			});
+
+			expect(mockUser.todos).toHaveLength(2);
+			expect(mockUser.archivedTodos).toHaveLength(2);
+
+			const allIds = [...mockUser.todos, ...mockUser.archivedTodos].map((t) => t.id);
+			expect(new Set(allIds).size).toBe(allIds.length);
+			expect(mockUser.nextId).toBe(7);
+		});
+
 		it('handles empty guest data gracefully', async () => {
 			const mockUser = createMockUser();
 			mockFindOne.mockResolvedValue(mockUser);

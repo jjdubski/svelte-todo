@@ -13,8 +13,12 @@
 	/**
 	 * Show the migration dialog when:
 	 * - User is signed in (not guest)
-	 * - Was previously using guest mode (authMode in localStorage)
-	 * - Has local todos
+	 * - Has local todos in localStorage (regardless of how they got there)
+	 * - Data hasn't already been synced to server in a previous session
+	 *
+	 * Once migration completes (sync or start fresh), we set a flag so the
+	 * dialog doesn't re-trigger on subsequent page loads (the data from the
+	 * server is cached in localStorage by the store's save effect).
 	 */
 	$effect(() => {
 		if (!auth.isLoading && auth.isLoggedIn && !auth.isGuest) {
@@ -22,6 +26,8 @@
 			const hasLocalTodos = (storageGet('todos') || []).length > 0;
 			if (wasGuest && hasLocalTodos) {
 				showMigration = true;
+			} else {
+				showMigration = false;
 			}
 		}
 	});
@@ -53,9 +59,6 @@
 
 	function handleStartFresh() {
 		clearGuestData();
-		// Clear local todos
-		localStorage.removeItem('todos');
-		localStorage.removeItem('archivedTodos');
 		// Reset store state then load server data
 		store.todos = [];
 		store.archivedTodos = [];

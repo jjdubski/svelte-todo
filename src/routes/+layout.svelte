@@ -14,20 +14,20 @@
 	const _authStore = createAuthStore();
 	_todoStore.setAuthStore(_authStore);
 
-	// Load data from the server for authenticated users.
-	// If the user was previously in guest mode AND has local data, the migration dialog
-	// handles it (skip this). If they were a guest but have no local data, load from API
-	// directly so they see their account's data.
+	// If the user has local data (todos in localStorage), the MigrationDialog handles
+	// syncing it to the server and then calls loadFromApi. If there's no local data,
+	// or the data was already synced in a previous session, load directly from the
+	// server so the user sees their account data.
 	$effect(() => {
 		if (!_authStore.isLoading && _authStore.isLoggedIn && !_authStore.isGuest) {
 			const wasGuest = storageGet('authMode') === 'guest';
-			const hasLocalData =
+			const hasGuestData =
 				(storageGet('todos') || []).length > 0 || (storageGet('archivedTodos') || []).length > 0;
-			if (!wasGuest || !hasLocalData) {
+
+			// Only pause auto-load when we specifically have guest data to migrate.
+			if (!wasGuest || !hasGuestData) {
 				_todoStore.loadFromApi();
 			}
-			// If wasGuest && hasLocalData, the MigrationDialog's own effect
-			// shows the dialog; no loadFromApi until migration completes.
 		}
 	});
 </script>

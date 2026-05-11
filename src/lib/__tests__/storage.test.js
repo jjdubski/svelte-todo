@@ -205,6 +205,7 @@ describe('storage', () => {
 	describe('clearGuestData', () => {
 		it('removes all auth and todo keys', () => {
 			mockStore['authMode'] = JSON.stringify('guest');
+			mockStore['_localDataSynced'] = JSON.stringify(true);
 			mockStore['todos'] = JSON.stringify([{ id: 1, title: 'Test' }]);
 			mockStore['archivedTodos'] = JSON.stringify([]);
 			mockStore['categories'] = JSON.stringify(['Work']);
@@ -226,6 +227,7 @@ describe('storage', () => {
 			clearGuestData();
 
 			expect(mockStore['authMode']).toBeUndefined();
+			expect(mockStore['_localDataSynced']).toBeUndefined();
 			expect(mockStore['todos']).toBeUndefined();
 			expect(mockStore['archivedTodos']).toBeUndefined();
 			expect(mockStore['categories']).toBeUndefined();
