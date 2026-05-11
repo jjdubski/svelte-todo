@@ -42,13 +42,13 @@ function formatConnectionError(err) {
 	}
 	if (msg.includes('Authentication failed')) {
 		return (
-			'MongoDB authentication failed. Check that your MONGODB_URI contains the correct ' +
+			'MongoDB authentication failed. Check that your STORAGE_MONGODB_URI contains the correct ' +
 			'username, password, and database name. If your password contains special characters, ' +
 			'they must be URL-encoded.'
 		);
 	}
 	if (msg.includes('ENOTFOUND')) {
-		return 'MongoDB hostname could not be resolved. Check that your MONGODB_URI cluster name is correct.';
+		return 'MongoDB hostname could not be resolved. Check that your STORAGE_MONGODB_URI cluster name is correct.';
 	}
 	return msg;
 }
@@ -62,10 +62,10 @@ export async function connectDB() {
 	if (cached.conn) return cached.conn;
 
 	if (!cached.promise) {
-		const uri = env.MONGODB_URI;
+		const uri = env.STORAGE_MONGODB_URI;
 		if (!uri) {
-			console.error('[db] MONGODB_URI environment variable is not set');
-			throw new Error('MONGODB_URI is not configured');
+			console.error('[db] STORAGE_MONGODB_URI environment variable is not set');
+			throw new Error('STORAGE_MONGODB_URI is not configured');
 		}
 
 		cached.promise = mongoose.connect(uri, CONNECTION_OPTIONS).then((m) => {

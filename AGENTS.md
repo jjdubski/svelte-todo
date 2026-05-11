@@ -26,7 +26,7 @@ Single-package Svelte 5 + SvelteKit 2 SPA. Plain JS (no TypeScript), JSDoc types
 - **Store pattern**: Class-based stores in `src/lib/state/` exposed via `createContext/setContext/getContext`. `TodoStore` references `AuthStore` for conditional API sync.
 - **Routes**: `/` (login/landing), `/tasks` (main todo list — accepts URL query params `?title=&desc=&due=&priority=` for quick add), `/archived`, `/board`, `/calendar`, `/stats`.
 - **Dark mode**: `.dark` class on `<html>` toggled by JS (not Tailwind media strategy). Zero-FOUC script in `app.html`.
-- **Env vars required** (`src/lib/server/auth.js`, `src/lib/server/db.js`): `MONGODB_URI`, `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Apple OAuth keys are optional. `PUBLIC_APPLE_ENABLED` defaults to `'false'` in `vite.config.js`.
+- **Env vars required** (`src/lib/server/auth.js`, `src/lib/server/db.js`): `STORAGE_MONGODB_URI`, `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Apple OAuth keys are optional. `PUBLIC_APPLE_ENABLED` defaults to `'false'` in `vite.config.js`.
 
 ## Tooling quirks
 
