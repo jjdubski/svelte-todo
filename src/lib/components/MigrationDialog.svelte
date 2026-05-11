@@ -42,6 +42,8 @@
 			// Migration succeeded — clear guest data from localStorage
 			clearGuestData();
 			showMigration = false;
+			// Load full server data (may include data from other devices)
+			await store.loadFromApi();
 		} catch (e) {
 			syncError = e.message || 'Failed to sync. Please try again.';
 		} finally {
@@ -54,10 +56,11 @@
 		// Clear local todos
 		localStorage.removeItem('todos');
 		localStorage.removeItem('archivedTodos');
-		// Reset store state
+		// Reset store state then load server data
 		store.todos = [];
 		store.archivedTodos = [];
 		showMigration = false;
+		store.loadFromApi();
 	}
 </script>
 

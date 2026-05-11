@@ -3,6 +3,7 @@
 	import '../app.css';
 	import { createTodoStore } from '$lib/state/todoStore.svelte.js';
 	import { createAuthStore } from '$lib/state/authStore.svelte.js';
+	import { storageGet } from '$lib/scripts/storage.js';
 	import NavBar from '$lib/components/NavBar.svelte';
 	import MigrationDialog from '$lib/components/MigrationDialog.svelte';
 
@@ -12,6 +13,23 @@
 	const _todoStore = createTodoStore();
 	const _authStore = createAuthStore();
 	_todoStore.setAuthStore(_authStore);
+
+	// Load data from the server for authenticated users.
+	// If the user was previously in guest mode AND has local data, the migration dialog
+	// handles it (skip this). If they were a guest but have no local data, load from API
+	// directly so they see their account's data.
+	$effect(() => {
+		if (!_authStore.isLoading && _authStore.isLoggedIn && !_authStore.isGuest) {
+			const wasGuest = storageGet('authMode') === 'guest';
+			const hasLocalData =
+				(storageGet('todos') || []).length > 0 || (storageGet('archivedTodos') || []).length > 0;
+			if (!wasGuest || !hasLocalData) {
+				_todoStore.loadFromApi();
+			}
+			// If wasGuest && hasLocalData, the MigrationDialog's own effect
+			// shows the dialog; no loadFromApi until migration completes.
+		}
+	});
 </script>
 
 <svelte:head>

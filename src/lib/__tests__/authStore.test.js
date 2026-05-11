@@ -79,7 +79,7 @@ describe('AuthStore', () => {
 			expect(auth.isGuest).toBe(true);
 		});
 
-		it('clears guest mode when session is found', async () => {
+		it('leaves guest mode marker when session is found (migration dialog handles clearing)', async () => {
 			vi.unstubAllGlobals();
 			const mockStore = { authMode: JSON.stringify('guest') };
 			vi.stubGlobal('localStorage', createMockLocalStorage(mockStore));
@@ -104,10 +104,11 @@ describe('AuthStore', () => {
 				expect(auth.isLoading).toBe(false);
 			});
 
-			// User is logged in, guest mode is cleared
+			// User is logged in, not guest
 			expect(auth.isLoggedIn).toBe(true);
 			expect(auth.isGuest).toBe(false);
-			expect(localStorage.getItem('authMode')).toBeNull();
+			// authMode is NOT cleared here — it's left for the migration dialog to handle
+			expect(localStorage.getItem('authMode')).toBe(JSON.stringify('guest'));
 		});
 
 		it('fetches session when no guest mode and logs in on valid session', async () => {

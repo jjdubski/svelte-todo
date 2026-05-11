@@ -24,8 +24,11 @@ class AuthStore {
 
 	/**
 	 * Fetch the session from the server.
-	 * If a valid session exists, the user is logged in (guest mode is cleared).
+	 * If a valid session exists, the user is logged in.
 	 * If no session and the user was previously in guest mode, fall back to guest behavior.
+	 *
+	 * NOTE: We do NOT clear `authMode` here — the migration dialog handles that
+	 * after it has had a chance to read the 'guest' marker and offer data migration.
 	 * @param {boolean} wasGuest
 	 */
 	async _fetchSession(wasGuest) {
@@ -36,10 +39,6 @@ class AuthStore {
 				if (data?.user) {
 					this.user = data.user;
 					this.isLoggedIn = true;
-					// Clear guest mode marker since user is now authenticated
-					if (wasGuest) {
-						storageRemove('authMode');
-					}
 					this.isLoading = false;
 					return;
 				}

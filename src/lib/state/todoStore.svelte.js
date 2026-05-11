@@ -596,6 +596,46 @@ class TodoStore {
 		this._auth = auth;
 	}
 
+	// ── Initial data load from server ──
+
+	/**
+	 * Fetch all user data from the server (todos, archived, custom tags, settings)
+	 * and replace the current store state with server data.
+	 * Called after authentication is confirmed for a non-guest user.
+	 * Safe to call multiple times — respects loading state internally.
+	 */
+	async loadFromApi() {
+		if (!this._auth?.isLoggedIn) return;
+		try {
+			const res = await fetch('/api/todos');
+			if (res.ok) {
+				const data = await res.json();
+				// Replace local state with server data
+				this.todos = Array.isArray(data.todos) ? data.todos : [];
+				this.archivedTodos = Array.isArray(data.archivedTodos) ? data.archivedTodos : [];
+				this.nextId = typeof data.nextId === 'number' ? data.nextId : 1;
+
+				// Restore custom tags from server
+				if (Array.isArray(data.customTags)) {
+					this.customTags = data.customTags;
+					for (const tag of data.customTags) {
+						if (!this.availableTags.includes(tag)) {
+							this.availableTags = [...this.availableTags, tag];
+						}
+					}
+				}
+				if (data.tagColors && typeof data.tagColors === 'object') {
+					this.tagColors = { ...this.tagColors, ...data.tagColors };
+				}
+				if (typeof data.darkMode === 'boolean') {
+					this.darkMode = data.darkMode;
+				}
+			}
+		} catch (e) {
+			console.warn('[todoStore] Failed to load data from API:', e);
+		}
+	}
+
 	// ── API sync helpers ──
 
 	/**
