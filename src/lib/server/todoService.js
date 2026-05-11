@@ -68,9 +68,33 @@ export async function upsertUser(authUserId, profile) {
  */
 export async function getTodos(authUserId) {
 	const user = await _getUser(authUserId);
+
+	// Deduplicate todos by ID to clean up any existing corrupt data
+	const seen = new Set();
+	const dedupedTodos = (user.todos || []).filter((t) => {
+		if (seen.has(t.id)) return false;
+		seen.add(t.id);
+		return true;
+	});
+	if (dedupedTodos.length !== (user.todos || []).length) {
+		user.todos = dedupedTodos;
+		await user.save();
+	}
+
+	const archivedSeen = new Set();
+	const dedupedArchived = (user.archivedTodos || []).filter((t) => {
+		if (archivedSeen.has(t.id)) return false;
+		archivedSeen.add(t.id);
+		return true;
+	});
+	if (dedupedArchived.length !== (user.archivedTodos || []).length) {
+		user.archivedTodos = dedupedArchived;
+		await user.save();
+	}
+
 	return {
-		todos: user.todos || [],
-		archivedTodos: user.archivedTodos || [],
+		todos: dedupedTodos,
+		archivedTodos: dedupedArchived,
 		customTags: user.customTags || [],
 		tagColors: Object.fromEntries(user.tagColors || new Map()),
 		darkMode: user.darkMode
@@ -85,9 +109,18 @@ export async function getTodos(authUserId) {
  */
 export async function createTodo(authUserId, todoData) {
 	const user = await _getUser(authUserId);
+
+	// Prevent duplicate IDs — if a todo with this ID already exists, return it
+	if (todoData.id) {
+		const existing = user.todos.find((t) => t.id === todoData.id);
+		if (existing) {
+			return existing;
+		}
+	}
+
 	const todo = {
-		id: todoData.id || randomUUID(),
 		...todoData,
+		id: todoData.id || randomUUID(),
 		completed: false,
 		createdAt: new Date().toISOString()
 	};
@@ -108,6 +141,7 @@ export async function updateTodo(authUserId, todoId, updates) {
 	const idx = user.todos.findIndex((/** @type {any} */ t) => t.id === todoId);
 	if (idx === -1) throw new Error('Todo not found');
 	Object.assign(user.todos[idx], updates);
+	user.markModified('todos');
 	await user.save();
 	return user.todos[idx];
 }
@@ -233,6 +267,7 @@ export async function importData(authUserId, data) {
 				user.todos.push({ ...todo });
 			}
 		}
+		user.markModified('todos');
 	}
 
 	if (Array.isArray(data.archivedTodos)) {
@@ -245,6 +280,7 @@ export async function importData(authUserId, data) {
 				user.archivedTodos.push({ ...todo });
 			}
 		}
+		user.markModified('archivedTodos');
 	}
 
 	if (Array.isArray(data.customTags)) {

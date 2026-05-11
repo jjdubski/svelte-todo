@@ -53,6 +53,7 @@ function createMockUser(overrides = {}) {
 		darkMode: false,
 		lastLoginAt: new Date('2025-01-01'),
 		save: vi.fn().mockResolvedValue(true),
+		markModified: vi.fn(),
 		toObject: vi.fn(),
 		...overrides
 	};
@@ -449,6 +450,7 @@ describe('todoService', () => {
 				customTags: ['work'],
 				tagColors,
 				save: vi.fn().mockResolvedValue({}),
+				markModified: vi.fn(),
 				toObject: vi.fn().mockReturnValue({})
 			};
 		}

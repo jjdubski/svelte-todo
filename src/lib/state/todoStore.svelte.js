@@ -47,6 +47,20 @@ function _generateId() {
 	return crypto.randomUUID();
 }
 
+/**
+ * Deduplicate an array of todos by ID, keeping the first occurrence.
+ * @param {Todo[]} todos
+ * @returns {Todo[]}
+ */
+function _dedupTodos(todos) {
+	const seen = new Set();
+	return todos.filter((t) => {
+		if (seen.has(t.id)) return false;
+		seen.add(t.id);
+		return true;
+	});
+}
+
 class TodoStore {
 	/** @type {boolean} */
 	isLoading = $state(true);
@@ -275,14 +289,14 @@ class TodoStore {
 			const a = this.archivedTodos;
 			const ct = this.customTags;
 			const tc = this.tagColors;
-			this.stats = this._computeStats([...t, ...a]);
+			this.stats = this._computeStats(t);
 			this.filteredTodos = this._computeFiltered(t);
 			this.upcomingDueTasks = this._computeUpcomingDue(t);
 			this.streak = this._computeStreak([...t, ...a]);
 			this.completionsByDay = this._computeCompletionsByDay([...t, ...a]);
 			this.priorityDistribution = this._computePriorityDistribution(t);
 			this.categoryBreakdown = this._computeCategoryBreakdown([...t, ...a]);
-			this.overdueTasks = this._computeOverdueTasks([...t, ...a]);
+			this.overdueTasks = this._computeOverdueTasks(t);
 			storageSet('todos', t);
 			storageSet('archivedTodos', a);
 			storageSet('customTags', ct);
@@ -365,11 +379,11 @@ class TodoStore {
 		const archivedSaved = storageGet('archivedTodos') || [];
 
 		if (Array.isArray(saved) && saved.length > 0) {
-			this.todos = saved;
+			this.todos = _dedupTodos(saved);
 		}
 
 		if (Array.isArray(archivedSaved) && archivedSaved.length > 0) {
-			this.archivedTodos = archivedSaved;
+			this.archivedTodos = _dedupTodos(archivedSaved);
 		}
 
 		// Restore custom tags and tag colors from localStorage
@@ -602,9 +616,11 @@ class TodoStore {
 			const res = await fetch('/api/todos');
 			if (res.ok) {
 				const data = await res.json();
-				// Replace local state with server data
-				this.todos = Array.isArray(data.todos) ? data.todos : [];
-				this.archivedTodos = Array.isArray(data.archivedTodos) ? data.archivedTodos : [];
+				// Replace local state with server data (deduped by ID)
+				this.todos = Array.isArray(data.todos) ? _dedupTodos(data.todos) : [];
+				this.archivedTodos = Array.isArray(data.archivedTodos)
+					? _dedupTodos(data.archivedTodos)
+					: [];
 
 				// Restore custom tags from server
 				if (Array.isArray(data.customTags)) {
