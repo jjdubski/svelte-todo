@@ -1,13 +1,25 @@
 /// <reference types="vitest" />
 import { sveltekit } from '@sveltejs/kit/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { createLogger } from 'vite';
 import { defineConfig } from 'vitest/config';
+
+// Suppress SSR transform warning in @auth/sveltekit (imports customFetch from @auth/core
+// only to re-export it, which Vite's SSR transform sees as unused):
+//   "customFetch" is imported from external module "@auth/core" but never used
+const logger = createLogger();
+const { warn: originalWarn } = logger;
+logger.warn = (msg, options) => {
+	if (msg.includes('customFetch') && msg.includes('@auth/sveltekit')) return;
+	originalWarn(msg, options);
+};
 
 // Default optional public env vars so $env/static/public doesn't fail at build time.
 // Users override these in their .env file when enabling the corresponding feature.
 process.env.PUBLIC_APPLE_ENABLED = process.env.PUBLIC_APPLE_ENABLED || 'false';
 
 export default defineConfig({
+	customLogger: logger,
 	plugins: [
 		sveltekit(),
 		VitePWA({

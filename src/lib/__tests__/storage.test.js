@@ -74,7 +74,10 @@ describe('storage', () => {
 	describe('storageSet', () => {
 		it('stores JSON-serialized value', () => {
 			storageSet('key', { a: 1, b: 2 });
-			expect(localStorage.setItem).toHaveBeenCalledWith('key', JSON.stringify({ a: 1, b: 2 }));
+			expect(localStorage.setItem).toHaveBeenCalledWith(
+				'key',
+				JSON.stringify({ a: 1, b: 2 })
+			);
 			expect(mockStore['key']).toBe(JSON.stringify({ a: 1, b: 2 }));
 		});
 
@@ -188,6 +191,8 @@ describe('storage', () => {
 		it('handles localStorage errors gracefully (storageGet catches internally)', () => {
 			// storageGet catches errors from localStorage.getItem and returns null;
 			// getGuestData's outer try/catch is a safety net for non-storageGet errors.
+			// Spy on console.warn to avoid noisy test output (storageGet intentionally warns).
+			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 			localStorage.getItem.mockImplementation(() => {
 				throw new Error('storage error');
 			});
@@ -199,6 +204,8 @@ describe('storage', () => {
 			expect(data.customTags).toEqual([]);
 			expect(data.tagColors).toEqual({});
 			expect(data.darkMode).toBeNull();
+			expect(warnSpy).toHaveBeenCalled();
+			warnSpy.mockRestore();
 		});
 	});
 

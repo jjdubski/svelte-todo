@@ -12,10 +12,10 @@
 		"lint": "eslint src/",
 		"lint:fix": "eslint src/ --fix",
 		"prepare": "husky || svelte-kit sync || echo ''",
-		"test": "vitest run && echo 'Running e2e tests...' && playwright test",
+		"test": "vitest run && echo 'Running e2e tests...' && npm run test:e2e",
 		"vitest": "vitest run",
 		"test:watch": "vitest",
-		"test:e2e": "playwright test"
+		"test:e2e": "vite build && playwright test"
 	},
 	"lint-staged": {
 		"*": "prettier --write --ignore-unknown"
