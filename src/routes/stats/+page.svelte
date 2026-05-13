@@ -1,15 +1,7 @@
 <script>
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import StatsBar from '$lib/components/StatsBar.svelte';
-	import {
-		BarChart3,
-		PieChart,
-		List,
-		AlertTriangle,
-		Flame,
-		ArrowLeft,
-		Target
-	} from 'lucide-svelte';
+	import { BarChart3, PieChart, List, AlertTriangle, Flame, ArrowLeft, Target } from 'lucide-svelte';
 
 	const store = getTodoStore();
 
@@ -21,22 +13,22 @@
 	}
 
 	/** Completion rate percentage */
-	let completedPct = $derived(
-		store.stats.total > 0 ? Math.round((store.stats.completed / store.stats.total) * 100) : 0
-	);
-	let activePct = $derived(
-		store.stats.total > 0 ? Math.round((store.stats.active / store.stats.total) * 100) : 0
-	);
+	let completedPct = $derived.by(() => {
+		const allTodos = [...store.todos, ...store.archivedTodos];
+		const total = allTodos.length;
+		const completed = allTodos.filter((t) => t.completed).length;
+		return total > 0 ? Math.round((completed / total) * 100) : 0;
+	});
+	let activePct = $derived(store.stats.total > 0 ? Math.round((store.stats.active / store.stats.total) * 100) : 0);
 
 	/** Max completions in a day (for scaling bar charts) */
 	let maxDayCompletions = $derived(Math.max(1, ...Object.values(store.completionsByDay)));
 
 	/** Total tasks for priority distribution bar */
 	let priorityTotal = $derived(
-		store.priorityDistribution.high +
-			store.priorityDistribution.medium +
-			store.priorityDistribution.low
+		store.priorityDistribution.high + store.priorityDistribution.medium + store.priorityDistribution.low
 	);
+	let categoryTotal = $derived(Object.values(store.categoryBreakdown).reduce((sum, c) => sum + c, 0));
 </script>
 
 <div
@@ -48,9 +40,7 @@
 		style="background: var(--card-bg); box-shadow: 0 8px 32px var(--shadow); border-color: var(--border); transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;"
 	>
 		<div class="mb-4 flex items-center justify-between gap-2">
-			<h2 class="m-0 text-xl font-semibold sm:text-2xl" style="color: var(--text-heading);">
-				Analytics
-			</h2>
+			<h2 class="m-0 text-xl font-semibold sm:text-2xl" style="color: var(--text-heading);">Analytics</h2>
 			<a
 				href="/"
 				class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium no-underline transition-all hover:opacity-80 sm:text-base"
@@ -87,9 +77,7 @@
 				</div>
 
 				<div class="mb-2 flex items-center justify-between text-sm sm:text-base">
-					<span style="color: var(--text-secondary);"
-						>Completed: <strong>{completedPct}%</strong></span
-					>
+					<span style="color: var(--text-secondary);">Completed: <strong>{completedPct}%</strong></span>
 					<span style="color: var(--text-secondary);">Active: <strong>{activePct}%</strong></span>
 				</div>
 
@@ -166,9 +154,7 @@
 						<h3 class="m-0 text-sm font-semibold sm:text-base" style="color: var(--text-heading);">
 							Productivity This Week
 						</h3>
-						<p class="m-0 text-xs sm:text-sm" style="color: var(--text-muted);">
-							Tasks completed per day
-						</p>
+						<p class="m-0 text-xs sm:text-sm" style="color: var(--text-muted);">Tasks completed per day</p>
 					</div>
 				</div>
 
@@ -253,14 +239,10 @@
 								style="background: var(--priority-medium);"
 							></span>
 							<span style="color: var(--text-secondary);">Medium</span>
-							<strong style="color: var(--text-heading);"
-								>{store.priorityDistribution.medium}</strong
-							>
+							<strong style="color: var(--text-heading);">{store.priorityDistribution.medium}</strong>
 						</div>
 						<div class="flex items-center gap-1.5">
-							<span
-								class="inline-block h-2.5 w-2.5 rounded-full"
-								style="background: var(--priority-low);"
+							<span class="inline-block h-2.5 w-2.5 rounded-full" style="background: var(--priority-low);"
 							></span>
 							<span style="color: var(--text-secondary);">Low</span>
 							<strong style="color: var(--text-heading);">{store.priorityDistribution.low}</strong>
@@ -294,12 +276,9 @@
 					{:else}
 						{#each Object.entries(store.categoryBreakdown) as [category, count] (category)}
 							{@const color = store.categoryColors[category] || '#64748b'}
-							{@const pct =
-								store.stats.total > 0 ? Math.round((count / store.stats.total) * 100) : 0}
+							{@const pct = categoryTotal > 0 ? Math.round((count / categoryTotal) * 100) : 0}
 							<div class="flex items-center gap-3">
-								<span
-									class="inline-block h-3 w-3 shrink-0 rounded-full"
-									style="background: {color};"
+								<span class="inline-block h-3 w-3 shrink-0 rounded-full" style="background: {color};"
 								></span>
 								<span
 									class="flex-1 text-sm font-medium sm:text-base"
