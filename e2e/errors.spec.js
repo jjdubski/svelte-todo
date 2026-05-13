@@ -16,9 +16,7 @@ test.describe('Error Pages', () => {
 		await expect(page.locator('h1')).toHaveText('404');
 
 		// Verify the contextual message for 404 is shown
-		await expect(
-			page.getByText('Page not found — the link you followed may be broken')
-		).toBeVisible();
+		await expect(page.getByText('Page not found — the link you followed may be broken')).toBeVisible();
 
 		// Verify "Back to Tasks" link exists
 		await expect(page.getByRole('link', { name: 'Back to Tasks' })).toBeVisible();

@@ -74,10 +74,7 @@ describe('storage', () => {
 	describe('storageSet', () => {
 		it('stores JSON-serialized value', () => {
 			storageSet('key', { a: 1, b: 2 });
-			expect(localStorage.setItem).toHaveBeenCalledWith(
-				'key',
-				JSON.stringify({ a: 1, b: 2 })
-			);
+			expect(localStorage.setItem).toHaveBeenCalledWith('key', JSON.stringify({ a: 1, b: 2 }));
 			expect(mockStore['key']).toBe(JSON.stringify({ a: 1, b: 2 }));
 		});
 

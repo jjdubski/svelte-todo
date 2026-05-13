@@ -215,18 +215,14 @@ describe('TodoStore API sync layer', () => {
 		});
 
 		it('restoreTodo calls _syncBatch', () => {
-			store.archivedTodos = [
-				{ id: 1, title: 'Archived', completed: true, createdAt: '2025-01-01' }
-			];
+			store.archivedTodos = [{ id: 1, title: 'Archived', completed: true, createdAt: '2025-01-01' }];
 			const spy = vi.spyOn(store, '_syncBatch');
 			store.restoreTodo(1);
 			expect(spy).toHaveBeenCalledWith('/api/todos/restore', [1]);
 		});
 
 		it('permanentDeleteTodo calls _syncPermanentDelete', () => {
-			store.archivedTodos = [
-				{ id: 1, title: 'Archived', completed: true, createdAt: '2025-01-01' }
-			];
+			store.archivedTodos = [{ id: 1, title: 'Archived', completed: true, createdAt: '2025-01-01' }];
 			const spy = vi.spyOn(store, '_syncPermanentDelete');
 			store.permanentDeleteTodo(1);
 			expect(spy).toHaveBeenCalledWith(1);

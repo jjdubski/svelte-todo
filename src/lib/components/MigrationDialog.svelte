@@ -70,10 +70,7 @@
 {#if showMigration}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4"
-		onclick={() => {}}
-	>
+	<div class="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4" onclick={() => {}}>
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
@@ -83,8 +80,8 @@
 		>
 			<h2 class="mb-2 text-lg font-bold" style="color: var(--text-heading);">Sync your data?</h2>
 			<p class="mb-6 text-sm leading-relaxed" style="color: var(--text-secondary);">
-				You have tasks saved locally. Would you like to sync them to your account so they're
-				available everywhere?
+				You have tasks saved locally. Would you like to sync them to your account so they're available
+				everywhere?
 			</p>
 
 			{#if syncError}

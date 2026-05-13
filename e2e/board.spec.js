@@ -205,9 +205,7 @@ test.describe('Board page features', () => {
 		// The column body is the direct child of .board-column with role="button".
 		// The column body has 12px padding so clicking at (5,5) from the top-left
 		// hits the padding area — not a card.
-		const columnBody = page.locator(
-			'.board-column[aria-label="Pending column"] > [role="button"]'
-		);
+		const columnBody = page.locator('.board-column[aria-label="Pending column"] > [role="button"]');
 		await columnBody.click({ position: { x: 5, y: 5 } });
 
 		// All cards should be deselected
@@ -227,10 +225,7 @@ test.describe('Board page features', () => {
 		const doneBox = await doneColumn.boundingBox();
 
 		// Drag to bottom of Done column to avoid landing on the existing card (Gamma)
-		await page.mouse.move(
-			sourceBox.x + sourceBox.width / 2,
-			sourceBox.y + sourceBox.height / 2
-		);
+		await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
 		await page.mouse.down();
 		await page.mouse.move(doneBox.x + doneBox.width / 2, doneBox.y + doneBox.height - 15, {
 			steps: 20
@@ -244,9 +239,7 @@ test.describe('Board page features', () => {
 		await page.locator('button', { hasText: 'Undo' }).click();
 
 		// Verify column counts restored: Pending count should be back to 2
-		const pendingBadge = page.locator(
-			'.board-column[aria-label="Pending column"] .rounded-full'
-		);
+		const pendingBadge = page.locator('.board-column[aria-label="Pending column"] .rounded-full');
 		await expect(pendingBadge).toHaveText('2', { timeout: 3000 });
 	});
 });

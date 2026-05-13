@@ -62,10 +62,7 @@ test.describe('Calendar page', () => {
 			);
 			// Set up custom tags + colors so tag badges render in modal/tooltips
 			localStorage.setItem('customTags', JSON.stringify(['meeting', 'urgent']));
-			localStorage.setItem(
-				'tagColors',
-				JSON.stringify({ meeting: '#f59e0b', urgent: '#ef4444' })
-			);
+			localStorage.setItem('tagColors', JSON.stringify({ meeting: '#f59e0b', urgent: '#ef4444' }));
 		});
 
 		await page.goto('/calendar');

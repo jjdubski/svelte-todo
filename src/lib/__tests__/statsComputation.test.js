@@ -15,9 +15,7 @@ describe('computeCombinedCompletionRate', () => {
 			{ id: 1, completed: false },
 			{ id: 2, completed: false }
 		];
-		const archived = [
-			{ id: 3, completed: false }
-		];
+		const archived = [{ id: 3, completed: false }];
 		expect(computeCombinedCompletionRate(todos, archived)).toBe(0);
 	});
 
@@ -26,9 +24,7 @@ describe('computeCombinedCompletionRate', () => {
 			{ id: 1, completed: true },
 			{ id: 2, completed: true }
 		];
-		const archived = [
-			{ id: 3, completed: true }
-		];
+		const archived = [{ id: 3, completed: true }];
 		expect(computeCombinedCompletionRate(todos, archived)).toBe(100);
 	});
 
@@ -53,9 +49,7 @@ describe('computeCombinedCompletionRate', () => {
 			{ id: 1, completed: true },
 			{ id: 2, completed: false }
 		];
-		const archived = [
-			{ id: 3, completed: true }
-		];
+		const archived = [{ id: 3, completed: true }];
 		expect(computeCombinedCompletionRate(todos, archived)).toBe(67);
 	});
 
@@ -63,12 +57,8 @@ describe('computeCombinedCompletionRate', () => {
 		// Active: 1 completed, 0 incomplete = 100%
 		// Archived: 1 incomplete
 		// Combined: 1 of 2 completed = 50%
-		const todos = [
-			{ id: 1, completed: true }
-		];
-		const archived = [
-			{ id: 2, completed: false }
-		];
+		const todos = [{ id: 1, completed: true }];
+		const archived = [{ id: 2, completed: false }];
 		expect(computeCombinedCompletionRate(todos, archived)).toBe(50);
 	});
 
@@ -215,9 +205,7 @@ describe('computeCategoryBreakdown (combined with percentages)', () => {
 			{ id: 1, category: 'Work' },
 			{ id: 2 } // no category
 		];
-		const archived = [
-			{ id: 3, category: 'Personal' }
-		];
+		const archived = [{ id: 3, category: 'Personal' }];
 		const breakdown = computeCategoryBreakdown([...todos, ...archived]);
 		expect(breakdown).toEqual({ Work: 1, Personal: 1 });
 		const percentages = computeCategoryPercentages(breakdown);

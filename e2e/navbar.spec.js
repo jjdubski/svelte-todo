@@ -60,9 +60,7 @@ test.describe('NavBar', () => {
 			await page.waitForSelector('#title-input', { timeout: 10000 });
 		});
 
-		test('shows current page name and triangle on the left, auth/theme on the right', async ({
-			page
-		}) => {
+		test('shows current page name and triangle on the left, auth/theme on the right', async ({ page }) => {
 			// The toggle shows the current page label
 			const toggle = page.locator('.mobile-nav-toggle');
 			await expect(toggle).toBeVisible();
@@ -175,9 +173,7 @@ test.describe('NavBar', () => {
 			}
 		});
 
-		test('click-outside on a different element (the nav itself) closes the dropdown', async ({
-			page
-		}) => {
+		test('click-outside on a different element (the nav itself) closes the dropdown', async ({ page }) => {
 			// Open the dropdown
 			await page.locator('.mobile-nav-toggle').click();
 			await expect(page.locator('.mobile-nav-dropdown')).toBeVisible();

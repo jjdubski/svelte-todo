@@ -25,20 +25,10 @@
 </script>
 
 <div class="mb-2 flex items-center gap-1 border-b pb-2" style="border-color: var(--border);">
-	<button
-		type="button"
-		class="toolbar-btn rounded p-1"
-		onclick={() => insertMarkdown('**', '**')}
-		aria-label="Bold"
-	>
+	<button type="button" class="toolbar-btn rounded p-1" onclick={() => insertMarkdown('**', '**')} aria-label="Bold">
 		<Bold size={16} />
 	</button>
-	<button
-		type="button"
-		class="toolbar-btn rounded p-1"
-		onclick={() => insertMarkdown('_', '_')}
-		aria-label="Italic"
-	>
+	<button type="button" class="toolbar-btn rounded p-1" onclick={() => insertMarkdown('_', '_')} aria-label="Italic">
 		<Italic size={16} />
 	</button>
 	<div class="mx-1 h-4 w-px" style="background: var(--border);"></div>

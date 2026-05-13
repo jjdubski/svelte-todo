@@ -119,8 +119,7 @@
 		>Ctrl</kbd
 	>+<kbd
 		class="inline-block rounded px-1.5 py-0.5 text-[11px]"
-		style="background: var(--todo-bg); border: 1px solid var(--border); font-family: inherit; margin: 0 2px;"
-		>N</kbd
+		style="background: var(--todo-bg); border: 1px solid var(--border); font-family: inherit; margin: 0 2px;">N</kbd
 	>
 	quick add
 </div>

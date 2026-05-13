@@ -38,7 +38,9 @@
 			onclick={(e) => e.stopPropagation()}
 		>
 			<div class="flex items-center justify-between border-b p-5" style="border-color: var(--border);">
-				<h3 class="m-0 text-lg font-semibold" style="color: var(--text-heading);">{formattedDate}</h3>
+				<h3 class="m-0 text-lg font-semibold" style="color: var(--text-heading);">
+					{formattedDate}
+				</h3>
 				<button
 					type="button"
 					onclick={onclose}
@@ -77,7 +79,7 @@
 											</p>
 											{#if todo.priority}
 												<span
-													class="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase text-white"
+													class="rounded px-1.5 py-0.5 text-[10px] font-bold text-white uppercase"
 													style="background: {todo.priority === 'high'
 														? 'var(--priority-high)'
 														: todo.priority === 'low'

@@ -1,12 +1,6 @@
 remote_theme: pages-themes/midnight@v0.2.0
 plugins:
-  - jekyll-remote-theme
+    - jekyll-remote-theme
 title: [Todo App]
 tagline: [A Svelte5 Todo App]
-description:
-  [
-    A site used to create,
-    edit and track todos built with Svelte5,
-    SvelteKit,
-    TailwindCSS and Lucide Icons
-  ]
+description: [A site used to create, edit and track todos built with Svelte5, SvelteKit, TailwindCSS and Lucide Icons]

@@ -846,7 +846,10 @@ class TodoStore {
 				if (current) {
 					current.completed = state.completed;
 					current.tags = [...state.tags];
-					this._syncUpdate(todo.id, { completed: state.completed, tags: [...state.tags] });
+					this._syncUpdate(todo.id, {
+						completed: state.completed,
+						tags: [...state.tags]
+					});
 				}
 			}
 			const count = this.lastMovedTodos.length;

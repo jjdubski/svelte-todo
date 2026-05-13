@@ -44,7 +44,7 @@
 		<div class="mt-6">
 			<a
 				href={resolve('/')}
-				class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium no-underline text-white"
+				class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white no-underline"
 				style="background: var(--btn-primary);"
 			>
 				Back to Tasks

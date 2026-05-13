@@ -624,7 +624,12 @@ describe('TodoStore instance methods', () => {
 			const json = JSON.stringify({
 				todos: [],
 				archivedTodos: [
-					{ id: 'a1', title: 'Updated Archive', completed: true, createdAt: '2024-01-01' },
+					{
+						id: 'a1',
+						title: 'Updated Archive',
+						completed: true,
+						createdAt: '2024-01-01'
+					},
 					{ id: 'a2', title: 'New Archive', completed: true, createdAt: '2024-01-01' }
 				]
 			});

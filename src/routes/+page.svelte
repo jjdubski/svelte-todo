@@ -37,9 +37,7 @@
 			<div class="mb-8 text-center">
 				<img src={favicon} alt="Todo App" class="mx-auto mb-3 h-12 w-12" />
 				<h1 class="text-2xl font-bold" style="color: var(--text-heading);">Todo App</h1>
-				<p class="mt-1 text-sm" style="color: var(--text-secondary);">
-					Stay organized, get things done
-				</p>
+				<p class="mt-1 text-sm" style="color: var(--text-secondary);">Stay organized, get things done</p>
 			</div>
 
 			<!-- Sign in with Google -->
@@ -102,9 +100,7 @@
 			>
 				Continue as Guest
 			</button>
-			<p class="mt-2 text-center text-xs" style="color: var(--text-muted);">
-				Your data is stored locally only
-			</p>
+			<p class="mt-2 text-center text-xs" style="color: var(--text-muted);">Your data is stored locally only</p>
 		</div>
 	</div>
 {/if}

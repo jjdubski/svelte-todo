@@ -20,9 +20,7 @@
 	>
 		<StatsBar />
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="text-lg font-semibold sm:text-xl" style="color: var(--text-heading);">
-				Archived Tasks
-			</h2>
+			<h2 class="text-lg font-semibold sm:text-xl" style="color: var(--text-heading);">Archived Tasks</h2>
 			<span class="flex items-center gap-2">
 				<div class="relative">
 					<button

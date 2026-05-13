@@ -203,9 +203,7 @@ describe('todoService', () => {
 
 			expect(result.id).toBeTruthy();
 			expect(typeof result.id).toBe('string');
-			expect(result.id).toMatch(
-				/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-			);
+			expect(result.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 			expect(result.title).toBe('No ID Task');
 			expect(mockUser.todos).toHaveLength(1);
 			expect(mockUser.save).toHaveBeenCalled();
@@ -239,17 +237,13 @@ describe('todoService', () => {
 			const mockUser = createMockUser();
 			mockFindOne.mockResolvedValue(mockUser);
 
-			await expect(updateTodo('test-user-id', '999', { title: 'Nope' })).rejects.toThrow(
-				'Todo not found'
-			);
+			await expect(updateTodo('test-user-id', '999', { title: 'Nope' })).rejects.toThrow('Todo not found');
 		});
 
 		it('throws when user is not found', async () => {
 			mockFindOne.mockResolvedValue(null);
 
-			await expect(updateTodo('nonexistent', '1', { title: 'Nope' })).rejects.toThrow(
-				'User not found'
-			);
+			await expect(updateTodo('nonexistent', '1', { title: 'Nope' })).rejects.toThrow('User not found');
 		});
 	});
 
@@ -377,9 +371,7 @@ describe('todoService', () => {
 
 			const guestData = {
 				todos: [{ id: '100', title: 'Guest Task', completed: false, createdAt: '2025-01-01' }],
-				archivedTodos: [
-					{ id: '200', title: 'Guest Archived', completed: true, createdAt: '2025-01-01' }
-				],
+				archivedTodos: [{ id: '200', title: 'Guest Archived', completed: true, createdAt: '2025-01-01' }],
 				customTags: ['home', 'shopping'],
 				tagColors: { home: '#ff0', shopping: '#f0f' }
 			};
@@ -404,7 +396,12 @@ describe('todoService', () => {
 			const mockUser = createMockUser({
 				todos: [{ id: '1', title: 'Existing', completed: false, createdAt: '2025-01-01' }],
 				archivedTodos: [
-					{ id: '2', title: 'Archived Existing', completed: true, createdAt: '2025-01-01' }
+					{
+						id: '2',
+						title: 'Archived Existing',
+						completed: true,
+						createdAt: '2025-01-01'
+					}
 				]
 			});
 			mockFindOne.mockResolvedValue(mockUser);
@@ -412,7 +409,12 @@ describe('todoService', () => {
 			await migrateGuestData('test-user-id', {
 				todos: [{ id: '1', title: 'Guest Duplicate', completed: false, createdAt: '2025-01-02' }],
 				archivedTodos: [
-					{ id: '2', title: 'Guest Archived Duplicate', completed: true, createdAt: '2025-01-03' }
+					{
+						id: '2',
+						title: 'Guest Archived Duplicate',
+						completed: true,
+						createdAt: '2025-01-03'
+					}
 				]
 			});
 
@@ -445,7 +447,12 @@ describe('todoService', () => {
 			return {
 				todos: [{ id: '1', title: 'Existing Todo', completed: false, createdAt: '2024-01-01' }],
 				archivedTodos: [
-					{ id: 'a1', title: 'Existing Archived', completed: true, createdAt: '2024-01-01' }
+					{
+						id: 'a1',
+						title: 'Existing Archived',
+						completed: true,
+						createdAt: '2024-01-01'
+					}
 				],
 				customTags: ['work'],
 				tagColors,
@@ -487,7 +494,12 @@ describe('todoService', () => {
 
 			await importData('test-user-id', {
 				archivedTodos: [
-					{ id: 'a1', title: 'Updated Archived', completed: true, createdAt: '2024-01-01' }
+					{
+						id: 'a1',
+						title: 'Updated Archived',
+						completed: true,
+						createdAt: '2024-01-01'
+					}
 				]
 			});
 
@@ -500,9 +512,7 @@ describe('todoService', () => {
 			mockFindOne.mockResolvedValue(mockUser);
 
 			await importData('test-user-id', {
-				archivedTodos: [
-					{ id: 'a2', title: 'New Archived', completed: true, createdAt: '2024-01-02' }
-				]
+				archivedTodos: [{ id: 'a2', title: 'New Archived', completed: true, createdAt: '2024-01-02' }]
 			});
 
 			expect(mockUser.archivedTodos).toHaveLength(2);

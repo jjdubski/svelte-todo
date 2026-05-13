@@ -42,10 +42,7 @@ function inlineFormat(text) {
 	// Inline code `code`
 	text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
 	// Links [text](url)
-	text = text.replace(
-		/\[([^\]]+)\]\(([^)]+)\)/g,
-		'<a href="$2" target="_blank" rel="noopener">$1</a>'
-	);
+	text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 	return text;
 }
 

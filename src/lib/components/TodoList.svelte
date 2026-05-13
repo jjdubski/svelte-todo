@@ -51,10 +51,7 @@
 	{#if store.isLoading}
 		<SkeletonLoader />
 	{:else if store.filteredTodos.length === 0}
-		<div
-			class="flex flex-col items-center px-4 py-12"
-			in:fade={{ duration: store.prefersReducedMotion ? 0 : 300 }}
-		>
+		<div class="flex flex-col items-center px-4 py-12" in:fade={{ duration: store.prefersReducedMotion ? 0 : 300 }}>
 			{#if store.todos.length === 0}
 				<!-- No tasks ever -->
 				<div
@@ -66,9 +63,7 @@
 				<h3 class="m-0 mb-2 text-base font-semibold sm:text-lg" style="color: var(--text-heading);">
 					No tasks yet
 				</h3>
-				<p class="m-0 mb-6 text-sm sm:text-base" style="color: var(--text-muted);">
-					Add a task to get started
-				</p>
+				<p class="m-0 mb-6 text-sm sm:text-base" style="color: var(--text-muted);">Add a task to get started</p>
 				<button
 					class="glow-btn flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-none px-4 py-3.5 text-sm font-semibold sm:text-base"
 					style="background: var(--btn-primary); color: white; max-width: 280px;"
@@ -187,8 +182,7 @@
 								class:due-today={isToday}
 								class:due-tomorrow={isTomorrow}
 							>
-								<span class="flex-1 truncate font-medium" style="color: var(--text);"
-									>{task.title}</span
+								<span class="flex-1 truncate font-medium" style="color: var(--text);">{task.title}</span
 								>
 								<span
 									class="upcoming-date-label text-xs font-medium whitespace-nowrap sm:text-sm"

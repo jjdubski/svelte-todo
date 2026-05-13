@@ -1,15 +1,6 @@
 <script>
 	import { slide } from 'svelte/transition';
-	import {
-		Edit2,
-		Archive,
-		X,
-		ChevronDown,
-		ChevronRight,
-		Repeat,
-		CheckSquare,
-		Square
-	} from 'lucide-svelte';
+	import { Edit2, Archive, X, ChevronDown, ChevronRight, Repeat, CheckSquare, Square } from 'lucide-svelte';
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import { renderMarkdown } from '$lib/scripts/markdown.js';
 	import { format, localDateStr } from '$lib/utils/todoUtils.js';
@@ -187,9 +178,7 @@
 						{#if todo.dueDate}
 							<span
 								class="mr-2 text-sm font-medium sm:text-base"
-								style="color: {isOverdue(todo.dueDate)
-									? 'var(--priority-high)'
-									: 'var(--text-muted)'};"
+								style="color: {isOverdue(todo.dueDate) ? 'var(--priority-high)' : 'var(--text-muted)'};"
 							>
 								{formatDate(todo.dueDate)}
 							</span>

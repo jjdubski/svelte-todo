@@ -165,7 +165,10 @@ describe('Calendar page — tasks grouped by date', () => {
 	});
 
 	it('returns empty object when no todos have dueDate', () => {
-		const todos = [{ id: '1', title: 'A' }, { id: '2', title: 'B' }];
+		const todos = [
+			{ id: '1', title: 'A' },
+			{ id: '2', title: 'B' }
+		];
 		expect(groupByDate(todos)).toEqual({});
 	});
 

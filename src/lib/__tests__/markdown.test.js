@@ -13,9 +13,7 @@ describe('renderMarkdown', () => {
 	});
 
 	it('renders **bold** as <strong>', () => {
-		expect(renderMarkdown('This is **bold** text')).toBe(
-			'<p>This is <strong>bold</strong> text</p>'
-		);
+		expect(renderMarkdown('This is **bold** text')).toBe('<p>This is <strong>bold</strong> text</p>');
 	});
 
 	it('renders *italic* as <em>', () => {
@@ -28,9 +26,7 @@ describe('renderMarkdown', () => {
 
 	it('renders [link](url) as anchor with target and rel', () => {
 		const result = renderMarkdown('Click [here](https://example.com)');
-		expect(result).toBe(
-			'<p>Click <a href="https://example.com" target="_blank" rel="noopener">here</a></p>'
-		);
+		expect(result).toBe('<p>Click <a href="https://example.com" target="_blank" rel="noopener">here</a></p>');
 	});
 
 	it('renders ## Heading as <h2>', () => {
@@ -71,9 +67,7 @@ describe('renderMarkdown', () => {
 
 	it('renders inline formatting inside list items', () => {
 		const result = renderMarkdown('- **bold** item\n- *italic* item');
-		expect(result).toBe(
-			'<ul><li><strong>bold</strong> item</li><li><em>italic</em> item</li></ul>'
-		);
+		expect(result).toBe('<ul><li><strong>bold</strong> item</li><li><em>italic</em> item</li></ul>');
 	});
 
 	it('handles mixed content: heading, list, and paragraph', () => {
