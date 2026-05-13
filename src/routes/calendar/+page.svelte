@@ -1,20 +1,19 @@
 <script>
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
-	import { ChevronLeft, ChevronRight, Check } from 'lucide-svelte';
+	import { resolve } from '$app/paths';
+	import { ChevronLeft, ChevronRight, Check, ArrowLeft } from 'lucide-svelte';
 	import { format, addMonths, subMonths, isToday } from 'date-fns';
+	import DayDetailModal from '$lib/components/DayDetailModal.svelte';
 
 	const store = getTodoStore();
 
 	let currentDate = $state(new Date());
+	let selectedDate = $state(null);
 
 	let currentMonthName = $derived(format(currentDate, 'MMMM'));
 	let currentYearNum = $derived(currentDate.getFullYear());
-	let daysInMonth = $derived(
-		new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-	);
-	let firstDayOfMonth = $derived(
-		new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
-	); // 0 = Sunday
+	let daysInMonth = $derived(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate());
+	let firstDayOfMonth = $derived(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()); // 0 = Sunday
 
 	function prevMonth() {
 		currentDate = subMonths(currentDate, 1);
@@ -52,9 +51,7 @@
 		style="background: var(--card-bg); box-shadow: 0 8px 32px var(--shadow); border-color: var(--border); transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;"
 	>
 		<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-			<h2 class="m-0 text-xl font-semibold sm:text-2xl" style="color: var(--text-heading);">
-				Calendar View
-			</h2>
+			<h2 class="m-0 text-xl font-semibold sm:text-2xl" style="color: var(--text-heading);">Calendar View</h2>
 			<div
 				class="order-last flex w-full flex-1 items-center justify-center gap-2 sm:order-none sm:w-auto sm:gap-4"
 			>
@@ -81,10 +78,11 @@
 				</button>
 			</div>
 			<a
-				href="/"
+				href={resolve('/')}
 				class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium no-underline transition-all hover:opacity-80 sm:text-base"
 				style="color: var(--btn-primary); background: var(--input-bg);"
 			>
+				<ArrowLeft size={14} />
 				Back to Tasks
 			</a>
 		</div>
@@ -112,16 +110,20 @@
 			<!-- Days -->
 			{#each Array(daysInMonth) as _, i (i)}
 				{@const day = i + 1}
+				{@const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)}
+				{@const dateStr = format(date, 'yyyy-MM-dd')}
 				{@const tasks = getTasksForDay(day)}
-				{@const isDayToday = isToday(
-					new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-				)}
+				{@const isDayToday = isToday(date)}
 
 				<div
-					class="flex aspect-square flex-col gap-1 overflow-y-auto rounded-lg border p-1 sm:rounded-xl sm:p-2"
+					class="flex aspect-square cursor-pointer flex-col gap-1 overflow-y-auto rounded-lg border p-1 sm:rounded-xl sm:p-2"
 					style="border-color: {isDayToday
 						? 'var(--btn-primary)'
 						: 'var(--border)'}; background: var(--todo-bg);"
+					onclick={() => (selectedDate = dateStr)}
+					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedDate = dateStr)}
+					role="button"
+					tabindex="0"
 				>
 					<span
 						class="mb-1 block text-xs font-bold sm:text-sm"
@@ -130,23 +132,94 @@
 						{day}
 					</span>
 					{#each tasks as task (task.id)}
-						<div
-							class="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] sm:px-2 sm:py-1 sm:text-xs"
-							style="background: var(--input-bg); color: {task.completed
-								? 'var(--text-muted)'
-								: 'var(--text-heading)'}; text-decoration: {task.completed
-								? 'line-through'
-								: 'none'};"
-							title={task.title}
-						>
-							{#if task.completed}
-								<Check size={10} class="hidden sm:block" style="color: var(--btn-save);" />
-							{/if}
-							<span class="truncate">{task.title}</span>
+						<div class="tooltip-container relative">
+							<div
+								class="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] sm:px-2 sm:py-1 sm:text-xs"
+								style="background: var(--input-bg); color: {task.completed
+									? 'var(--text-muted)'
+									: 'var(--text-heading)'}; text-decoration: {task.completed
+									? 'line-through'
+									: 'none'};"
+							>
+								{#if task.completed}
+									<Check size={10} class="hidden sm:block" style="color: var(--btn-save);" />
+								{/if}
+								<span class="truncate">{task.title}</span>
+							</div>
+
+							<div
+								class="tooltip pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-[220px] rounded-lg border px-2 py-1 text-xs shadow-lg"
+								style="background: var(--card-bg); border-color: var(--border);"
+							>
+								<div class="flex items-center gap-1.5">
+									<span class="font-semibold" style="color: var(--text-heading);">
+										{task.title}
+									</span>
+									{#if task.priority}
+										<span
+											class="rounded px-1 text-[10px] font-bold text-white uppercase"
+											style="background: {task.priority === 'high'
+												? 'var(--priority-high)'
+												: task.priority === 'low'
+													? 'var(--priority-low)'
+													: 'var(--priority-medium)'}"
+										>
+											{task.priority}
+										</span>
+									{/if}
+								</div>
+
+								{#if task.description}
+									<p class="m-0 mt-0.5" style="color: var(--text-secondary);">
+										{task.description.length > 80
+											? `${task.description.slice(0, 80)}...`
+											: task.description}
+									</p>
+								{/if}
+
+								{#if task.tags && task.tags.length > 0}
+									<div class="mt-0.5 flex flex-wrap gap-1">
+										{#each task.tags.slice(0, 3) as tag (tag)}
+											<span
+												class="rounded px-1 text-[10px] text-white"
+												style="background: {store.tagColors[tag] || '#64748b'}"
+											>
+												{tag}
+											</span>
+										{/each}
+									</div>
+								{/if}
+
+								<div
+									class="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-r border-b"
+									style="background: var(--card-bg); border-color: var(--border);"
+								></div>
+							</div>
 						</div>
 					{/each}
 				</div>
 			{/each}
 		</div>
 	</div>
+
+	<DayDetailModal {selectedDate} onclose={() => (selectedDate = null)} />
 </div>
+
+<style>
+	.tooltip {
+		opacity: 0;
+		visibility: hidden;
+		transform: translate(-50%, 6px);
+		transition:
+			opacity 0.15s ease,
+			transform 0.15s ease,
+			visibility 0s linear;
+		transition-delay: 0.2s;
+	}
+
+	.tooltip-container:hover .tooltip {
+		opacity: 1;
+		visibility: visible;
+		transform: translate(-50%, 0);
+	}
+</style>
