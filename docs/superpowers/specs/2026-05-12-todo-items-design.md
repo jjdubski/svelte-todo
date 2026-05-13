@@ -116,10 +116,10 @@ No "Select" toggle button. Selection is always available via keyboard modifiers 
 
 - Selected cards get a highlighted border (matching `.archived-card-selected` pattern — blue border + glow)
 - Floating batch action bar appears at bottom when ≥1 card selected:
-    - `"{n} selected"` count
-    - **Archive** button → `store.archiveSelected()`
-    - **Mark Done** button → `store.completeSelected()`
-    - **Cancel** button → deselects all
+  - `"{n} selected"` count
+  - **Archive** button → `store.archiveSelected()`
+  - **Mark Done** button → `store.completeSelected()`
+  - **Cancel** button → deselects all
 
 **Drag-and-drop:** Still works independently — drag starts on `dragstart` event, not `click`.
 
@@ -137,8 +137,8 @@ No "Select" toggle button. Selection is always available via keyboard modifiers 
 **Undo:** Track the pre-move state of each moved todo so the user can revert.
 
 - Add `lastMovedTodos = $state([])` and `lastMovedStates = $state([])` to the store
-    - `lastMovedTodos`: the todo objects before the move
-    - `lastMovedStates`: the pre-move `{completed, tags}` for each
+  - `lastMovedTodos`: the todo objects before the move
+  - `lastMovedStates`: the pre-move `{completed, tags}` for each
 - New method `undoMove()` that restores each todo's pre-move `completed` and `tags` values
 - Call `undoMove()` from the existing Undo button in `<Toast>`, which already checks for `lastArchivedTodos` / `lastCompletedTodos` patterns — extend it to also check `lastMovedTodos`
 
