@@ -171,28 +171,28 @@ test.describe('Calendar page', () => {
 	// ──────────────────────────────────────────────
 
 	test('hovering over a task pill shows tooltip with task info', async ({ page }) => {
-		// The calendar grid should have task pills inside .tooltip-container elements
-		const pillContainer = page.locator('.tooltip-container').first();
-		await expect(pillContainer).toBeVisible({ timeout: 3000 });
+		// The calendar grid should have task pills (div[role="button"] with aria-label)
+		const taskPill = page.locator('[aria-label="Team standup"]').first();
+		await expect(taskPill).toBeVisible({ timeout: 3000 });
 
-		// Hover to trigger the tooltip (CSS transition-delay: 0.2s + 0.15s transition)
-		await pillContainer.hover();
+		// Hover to trigger the portal tooltip (200ms show delay)
+		await taskPill.hover();
 		await page.waitForTimeout(500);
 
-		// The .tooltip inside the container should now be visible
-		const tooltip = pillContainer.locator('.tooltip');
-		await expect(tooltip).toBeVisible();
+		// The tooltip-portal element should now be visible at the body level
+		const tooltipPortal = page.locator('.tooltip-portal');
+		await expect(tooltipPortal).toBeVisible({ timeout: 3000 });
 
 		// Tooltip should contain the task title
-		await expect(tooltip.getByText('Team standup')).toBeVisible();
+		await expect(tooltipPortal.getByText('Team standup')).toBeVisible();
 
 		// Tooltip should contain the priority badge
-		await expect(tooltip.getByText('HIGH')).toBeVisible();
+		await expect(tooltipPortal.getByText('HIGH')).toBeVisible();
 
 		// Tooltip should contain the task description (truncated)
-		await expect(tooltip.getByText(/Daily team sync meeting/)).toBeVisible();
+		await expect(tooltipPortal.getByText(/Daily team sync meeting/)).toBeVisible();
 
 		// Tooltip should contain the tag badge (exact match to avoid description text overlap)
-		await expect(tooltip.getByText('meeting', { exact: true })).toBeVisible();
+		await expect(tooltipPortal.getByText('meeting', { exact: true })).toBeVisible();
 	});
 });
