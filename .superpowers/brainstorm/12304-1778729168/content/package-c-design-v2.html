@@ -1,0 +1,71 @@
+<h2>📦 Package C: Archived Page — Refined Design</h2>
+
+<div class="section">
+	<h3>Page Layout Restructure</h3>
+	<p><strong>Current:</strong> One row with title + count/actions. No back button.</p>
+	<p><strong>New (matching board &amp; calendar):</strong></p>
+	<pre style="font-size: 0.85rem; background: var(--bg-highlight); padding: 0.75rem; border-radius: 6px">
+&lt;StatsBar /&gt;
+
+&lt;!-- Row 1: Title left + Back button right --&gt;
+&lt;div class="mb-2 flex items-center justify-between"&gt;
+    &lt;h2 class="text-lg font-semibold sm:text-xl"&gt;Archived Tasks&lt;/h2&gt;
+    &lt;BackButton /&gt;  &lt;!-- #7 — using component from #6 --&gt;
+&lt;/div&gt;
+
+&lt;!-- Row 2: Count + selection toggle --&gt;
+&lt;div class="mb-4 flex items-center justify-between"&gt;
+    &lt;span class="text-sm"&gt;{store.archivedTodos.length} archived&lt;/span&gt;
+    &lt;!-- Select mode toggle button stays --&gt;
+&lt;/div&gt;</pre
+	>
+</div>
+
+<div class="section">
+	<h3>#6 — BackButton shared component</h3>
+	<p>
+		Same as before: <code>src/lib/components/BackButton.svelte</code> with <code>href</code> and
+		<code>label</code> props. Standard <code>&lt;a&gt;</code> link with <code>ArrowLeft</code> icon.
+	</p>
+</div>
+
+<div class="section">
+	<h3>#9 — Selection: shared utility + bottom bar</h3>
+	<p><strong>New file:</strong> <code>src/lib/utils/selection.js</code> — shared selection logic</p>
+	<p><strong>Exports:</strong></p>
+	<ul>
+		<li><code>initSelection()</code> — returns <code>{ lastClickedId }</code> state</li>
+		<li>
+			<code>handleSelectionClick(e, todo, store, selectionKey, lastClickedId)</code> — unified click handler for
+			both board and archived pages
+		</li>
+		<li><code>clearSelection(store, selectionKey)</code> — clears selections</li>
+	</ul>
+	<p><strong>Changes to archived/+page.svelte:</strong></p>
+	<ul>
+		<li>Replace inline selection logic with shared utility</li>
+		<li>
+			Replace top-right select mode dropdown with a <strong>fixed bottom bar</strong> matching the board page
+			pattern:
+		</li>
+	</ul>
+	<pre style="font-size: 0.85rem; background: var(--bg-highlight); padding: 0.75rem; border-radius: 6px">
+{#if store.selectedArchived.size > 0}
+    &lt;div class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"&gt;
+        &lt;div class="flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg"
+             style="background: var(--card-bg);"&gt;
+            &lt;span&gt;{store.selectedArchived.size} selected&lt;/span&gt;
+            &lt;button onclick={() =&gt; store.restoreSelectedArchived()}&gt;Restore&lt;/button&gt;
+            &lt;button onclick={() =&gt; store.permanentDeleteSelectedArchived()}&gt;Delete&lt;/button&gt;
+            &lt;button onclick={() =&gt; { store.archivedSelectMode = false;
+                 store.selectedArchived = new SvelteSet(); }}&gt;Cancel&lt;/button&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+{/if}</pre
+	>
+	<p><strong>Changes to board/+page.svelte:</strong> Refactor to use shared utility as well.</p>
+</div>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	Does this refined Package C design look right? If approved, I'll move to Package D (Calendar).
+</p>

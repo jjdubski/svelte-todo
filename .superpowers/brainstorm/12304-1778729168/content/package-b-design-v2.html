@@ -1,0 +1,52 @@
+<h2>🔧 Package B: Mobile Nav — Refined Design</h2>
+
+<div class="section">
+	<h3>#13 — Increase text size on small screens</h3>
+	<p><strong>Current:</strong> <code>class="block rounded px-3 py-2 text-sm font-medium no-underline"</code></p>
+	<p>
+		<strong>Fix:</strong> Use <code>max-sm:text-base</code> (or appropriate Tailwind responsive prefix) to increase
+		font on smaller viewports without custom media queries.
+	</p>
+	<p><code>text-sm max-sm:text-base</code></p>
+	<p class="label">Also apply same to the trigger label span.</p>
+</div>
+
+<div class="section">
+	<h3>#11 — Center the dropdown itself</h3>
+	<p>
+		<strong>Current trigger:</strong> In a <code>relative</code> container — trigger button is left-aligned by
+		default.
+	</p>
+	<p>
+		<strong>Fix:</strong> Add <code>justify-center</code> to the parent flex container to center the trigger button.
+		Change dropdown positioning from <code>left-0</code> to <code>left-1/2 -translate-x-1/2</code>.
+	</p>
+	<pre style="font-size: 0.85rem; background: var(--bg-highlight); padding: 0.75rem; border-radius: 6px">
+&lt;div class="relative flex justify-center sm:hidden"&gt;
+    &lt;div class="mobile-nav-toggle flex cursor-pointer items-center gap-2 rounded-md px-2 py-1"&gt;
+        &lt;span class="text-sm font-medium"&gt;{currentPageLabel}&lt;/span&gt;
+        &lt;svg&gt;...&lt;/svg&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Dropdown centered under trigger --&gt;
+    &lt;div class="mobile-nav-dropdown absolute top-full left-1/2 z-50 -translate-x-1/2 mt-2 ..."&gt;</pre
+	>
+</div>
+
+<div class="section">
+	<h3>#15 — Fix triangle animation persistence</h3>
+	<p>
+		<strong>Root cause:</strong> The SVG triangle's <code>rotate-180</code> class is applied but may not work due to
+		missing <code>transform-origin</code> or the class being overridden. The <code>&lt;path&gt;</code> uses absolute
+		coordinates (<code>M1 1L5 7L9 1</code>) so rotation origin matters.
+	</p>
+	<p>
+		<strong>Fix:</strong> Add <code>transform-origin: center</code> via Tailwind (<code>origin-center</code>) and
+		ensure the transition targets <code>transform</code> properly. Alternative: wrap the SVG in a
+		<code>&lt;span&gt;</code> with the rotation class for more reliable behavior.
+	</p>
+</div>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	Does this updated Package B design look right to you? If so, I'll proceed to present Package C (Archived Page).
+</p>

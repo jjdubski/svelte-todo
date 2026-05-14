@@ -1,0 +1,62 @@
+<h2>📦 Package C: Archived Page Improvements</h2>
+
+<div class="section">
+	<h3>#6 — BackButton shared component</h3>
+	<p><strong>What:</strong> Create a <code>src/lib/components/BackButton.svelte</code> component</p>
+	<p><strong>Props:</strong></p>
+	<ul>
+		<li><code>href</code> — destination route (default: <code>'/tasks'</code>)</li>
+		<li><code>label</code> — button text (default: <code>'Back to Tasks'</code>)</li>
+	</ul>
+	<p>
+		<strong>Implementation:</strong> Simple <code>&lt;a href={href}&gt;</code> with
+		<code>&lt;ArrowLeft&gt;</code> icon and label. Match the calendar page's existing back button styling (the one
+		at line 80-87 of calendar/+page.svelte) so it's consistent.
+	</p>
+	<pre style="font-size: 0.85rem; background: var(--bg-highlight); padding: 0.75rem; border-radius: 6px">
+&lt;script&gt;
+    let { href = '/tasks', label = 'Back to Tasks' } = $props();
+&lt;/script&gt;
+
+&lt;a href={href} class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium no-underline transition-all hover:opacity-80"
+   style="color: var(--btn-primary); background: var(--input-bg);"&gt;
+    &lt;ArrowLeft size={14} /&gt;
+    {label}
+&lt;/a&gt;</pre
+	>
+</div>
+
+<div class="section">
+	<h3>#7 — Back to tasks on archived page</h3>
+	<p>
+		<strong>What:</strong> Add the BackButton component to <code>archived/+page.svelte</code>, positioned above the
+		page title area alongside the archived count.
+	</p>
+	<p><strong>Placement:</strong> Between StatsBar and the "Archived Tasks" heading row.</p>
+</div>
+
+<div class="section">
+	<h3>#9 — Meta+shift selection</h3>
+	<p>
+		<strong>What:</strong> Replicate the board page's keyboard-powered selection (<code>board/+page.svelte</code>
+		lines 54-76).
+	</p>
+	<p><strong>Changes to archived/+page.svelte:</strong></p>
+	<ul>
+		<li>Add <code>lastClickedId = $state(null)</code></li>
+		<li>Add <code>handleArchivedCardClick(e, todo)</code> matching board's <code>handleCardClick</code></li>
+		<li>Meta/Ctrl+Click → <code>store.toggleArchivedSelect(todo.id)</code></li>
+		<li>Shift+Click → range select from <code>lastClickedId</code> to clicked item</li>
+		<li>Regular Click → set single selection, <code>lastClickedId = todo.id</code></li>
+		<li>Visual: selected cards get the <code>archived-card-selected</code> class</li>
+	</ul>
+	<p>
+		<strong>Interaction with existing select mode:</strong> The current checkbox-based
+		<code>archivedSelectMode</code> stays as an alternative UI. Keyboard selection works regardless of whether
+		select mode is active.
+	</p>
+</div>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	Does this Package C design look right? If so, I'll move to Package D (Calendar).
+</p>

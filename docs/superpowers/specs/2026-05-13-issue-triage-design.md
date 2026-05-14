@@ -13,7 +13,7 @@ Mobile Navigation → Archived Page → Calendar → UI Polish. Each package is 
 
 ## Full Issue Hierarchy
 
-```
+```bash
 All Open Issues (15 issues)
 ├── #1  Increase gap between profile and theme icon              [Package A]
 │
@@ -56,6 +56,7 @@ decision.
 **File:** `src/lib/components/NavBar.svelte`
 
 **Current code (line 105):**
+
 ```html
 class="nav-link block rounded px-3 py-2 text-sm font-medium no-underline"
 ```
@@ -66,6 +67,7 @@ screens (< 400px), this improves readability since the dropdown occupies less ho
 space.
 
 Also apply to the trigger label span (line 81):
+
 ```html
 <span class="text-sm font-medium max-sm:text-base">{currentPageLabel}</span>
 ```
@@ -78,11 +80,13 @@ No layout overflow.
 **File:** `src/lib/components/NavBar.svelte`
 
 **Trigger centering (line 66):**
+
 - Change `<div class="relative flex sm:hidden">` to
   `<div class="relative flex justify-center sm:hidden">`
 - This centers the trigger button (current page label + triangle) horizontally
 
 **Dropdown centering (line 96):**
+
 - Change `left-0` to `left-1/2 -translate-x-1/2`
 - This centers the dropdown menu under the trigger, regardless of trigger width
 - Keep `min-w-40` to prevent the dropdown from being too narrow
@@ -97,6 +101,7 @@ appear horizontally centered. Dropdown items are also centered.
 **Root cause analysis:**
 The SVG triangle (lines 82-91) has `class:rotate-180={mobileMenuOpen}` and the
 `rotate-180` CSS class exists in `<style>` (line 145):
+
 ```css
 .rotate-180 {
     transform: rotate(180deg);
@@ -143,6 +148,7 @@ Matches the existing inline back-button styling on the calendar page (lines 80-8
 and board page (lines 165-171).
 
 **Usage across pages:**
+
 - `archived/+page.svelte` — newly added (see C2)
 - `board/+page.svelte` — replace inline `<a>` with `<BackButton />`
 - `calendar/+page.svelte` — replace inline `<a>` with `<BackButton />`
@@ -298,6 +304,7 @@ export function clearSelection(store, selectionKey, lastClickedState) {
 2. Replace inline `lastClickedId` with `initSelection()`
 
 **Verification:**
+
 - [ ] Meta/Ctrl+Click on archived card toggles individual selection
 - [ ] Shift+Click selects range between clicks
 - [ ] Regular click selects single, deselects others
@@ -340,6 +347,7 @@ Arrow indicator points to the correct location.
 **File:** `src/routes/calendar/+page.svelte`
 
 **Changes:**
+
 1. Remove `overflow-y-auto` from day squares (line 119)
 2. Add `truncate` to individual task title spans (line 147) — already has `.truncate`
 3. Tasks beyond visible square area are naturally clipped by `aspect-square` bounds
@@ -354,6 +362,7 @@ square bounds visually clips. Clicking a day still opens the detail modal with a
 **File:** `src/routes/calendar/+page.svelte`
 
 **Responsive improvements:**
+
 1. **Grid gap:** Already minimal (`gap-px` on mobile → `gap-1` on desktop). No change.
 2. **Touch targets:** Day squares already `aspect-square` — good tap target. Month nav
    buttons already have `p-1` padding. No change.
@@ -392,14 +401,14 @@ larger. Not excessive. Consistent on mobile and desktop.
 
 ## Files Changed Summary
 
-| File | Change |
-|------|--------|
-| `src/lib/components/NavBar.svelte` | #13 (text size), #11 (centering), #15 (triangle), #1 (gap) |
-| `src/lib/components/BackButton.svelte` | **NEW** — shared back button component |
-| `src/lib/components/Tooltip.svelte` | **NEW** — portal-style tooltip component |
-| `src/lib/utils/selection.js` | **NEW** — shared selection logic utility |
-| `src/routes/archived/+page.svelte` | #7 (layout), #9 (selection + bottom bar) |
-| `src/routes/board/+page.svelte` | #9 (refactor to shared utility), #6 (use BackButton) |
-| `src/routes/calendar/+page.svelte` | #14 (tooltip portal), #12 (remove scroll), #10 (mobile), #6 (use BackButton) |
+| File                                   | Change                                                                       |
+| -------------------------------------- | ---------------------------------------------------------------------------- |
+| `src/lib/components/NavBar.svelte`     | #13 (text size), #11 (centering), #15 (triangle), #1 (gap)                   |
+| `src/lib/components/BackButton.svelte` | **NEW** — shared back button component                                       |
+| `src/lib/components/Tooltip.svelte`    | **NEW** — portal-style tooltip component                                     |
+| `src/lib/utils/selection.js`           | **NEW** — shared selection logic utility                                     |
+| `src/routes/archived/+page.svelte`     | #7 (layout), #9 (selection + bottom bar)                                     |
+| `src/routes/board/+page.svelte`        | #9 (refactor to shared utility), #6 (use BackButton)                         |
+| `src/routes/calendar/+page.svelte`     | #14 (tooltip portal), #12 (remove scroll), #10 (mobile), #6 (use BackButton) |
 
 **Total:** 4 new files, 4 existing files modified across ~15 issues.

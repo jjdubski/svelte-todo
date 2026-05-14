@@ -1,0 +1,67 @@
+<h2>📦 Package D: Calendar Page Issues</h2>
+
+<div class="section">
+	<h3>#14 — Fix tooltip/hover cutoff (Portal approach)</h3>
+	<p>
+		<strong>Problem:</strong> Tooltips inside calendar day squares get clipped by <code>overflow-y-auto</code> on
+		the parent square.
+	</p>
+	<p><strong>Solution:</strong></p>
+	<ul>
+		<li>Create a <code>Tooltip.svelte</code> component that renders at document body level</li>
+		<li>On hover, calculate target element's bounding rect and position the tooltip absolutely to the viewport</li>
+		<li>Remove the inline tooltip HTML from calendar squares, replace with the portal component</li>
+		<li>Keep the same visual style (background, border, arrow indicator)</li>
+	</ul>
+	<div style="background: var(--bg-highlight); padding: 0.75rem; border-radius: 6px">
+		<p class="label" style="margin: 0 0 0.25rem 0">Alternatives considered:</p>
+		<ul style="margin: 0">
+			<li><strong>CSS overflow-visible</strong> — simpler but layout shifts possible</li>
+			<li><strong>Fixed-position tooltip</strong> — works everywhere but more event management</li>
+		</ul>
+	</div>
+</div>
+
+<div class="section">
+	<h3>#12 — Remove scroll, clip/truncate tasks</h3>
+	<p>
+		<strong>Problem:</strong> Each day square has <code>overflow-y-auto</code>, causing messy scrollbars inside tiny
+		squares.
+	</p>
+	<p><strong>Solution:</strong></p>
+	<ul>
+		<li>Remove <code>overflow-y-auto</code> class from day squares</li>
+		<li>Tasks beyond visible area are naturally clipped by the square's dimensions</li>
+		<li>Use <code>truncate</code> class on task titles to prevent text overflow</li>
+		<li>Full task list still accessible via clicking the day → DayDetailModal</li>
+	</ul>
+</div>
+
+<div class="section">
+	<h3>#10 — Make calendar page mobile-friendly</h3>
+	<p><strong>Problem:</strong> Calendar grid doesn't adapt well to small screens.</p>
+	<p><strong>Solution (sensible defaults based on the "all of the above" answer):</strong></p>
+	<ul>
+		<li>
+			<strong>Cramped grid:</strong> Keep 7-column grid (calendar needs it), reduce padding/gap on small screens.
+			Already has <code>gap-px</code> on mobile.
+		</li>
+		<li>
+			<strong>Touch targets:</strong> Increase day square tap areas by keeping <code>aspect-square</code> with
+			larger effective touch zone
+		</li>
+		<li>
+			<strong>Task text unreadable:</strong> On very small screens (&lt; 380px), hide task titles inside squares
+			entirely — show only a colored dot/badge per task. Details available via tap → DayDetailModal.
+		</li>
+		<li>
+			<strong>Month nav:</strong> Already responsive with <code>order-last</code> on mobile — the month nav wraps
+			below the title, which is good.
+		</li>
+		<li><strong>Back button:</strong> Already there (and will use BackButton component from Package C).</li>
+	</ul>
+</div>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	Does this Package D design look right? If approved, I'll move to Package A (UI Polish) — the final package.
+</p>

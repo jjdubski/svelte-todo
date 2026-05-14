@@ -1,0 +1,23 @@
+<h2>✅ Navigation Pattern: Standard <code>&lt;a&gt;</code> Links</h2>
+<p class="subtitle">Shared BackButton component uses SvelteKit's native <code>href</code> navigation</p>
+
+<div style="padding: 1rem; background: var(--bg-highlight); border-radius: 8px; margin-bottom: 1.5rem">
+	<p>
+		<strong>Impact:</strong> #5 (investigation) becomes unnecessary — close as "won't do".<br />
+		Straight to <strong>#6</strong> (BackButton component) → <strong>#7</strong> (back button on archived page).
+	</p>
+</div>
+
+<h3>🔜 Next up: Package C — Archived Page Improvements</h3>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	<strong>Question 3:</strong> For <strong>#9 (Add meta+shift key selection to archived page):</strong><br /><br />
+	The board page already has working meta/ctrl-click and shift-click range selection (in
+	<code>board/+page.svelte</code> lines 54-76). The archived page currently only has checkbox-based selection via
+	<code>archivedSelectMode</code>.<br /><br />
+	<strong>A)</strong> Replicate the board's click-handler pattern exactly — meta/ctrl-click toggles, shift-click
+	selects range, regular click selects single<br />
+	<strong>B)</strong> Adapt it for the archived context — same keyboard modifiers but with different visual feedback /
+	interaction model<br />
+	<strong>C)</strong> Skip keyboard modifiers — the current checkbox toggle is sufficient, just make it work better
+</p>

@@ -1,0 +1,25 @@
+<h2>📦 Package A: UI Polish</h2>
+
+<div class="section">
+	<h3>#1 — Increase gap between profile and theme icon</h3>
+	<p>
+		<strong>Current:</strong> In <code>NavBar.svelte</code> line 114, the right-side controls use
+		<code>gap-2</code> (8px):
+	</p>
+	<pre style="font-size: 0.85rem; background: var(--bg-highlight); padding: 0.75rem; border-radius: 6px">
+&lt;div class="absolute right-4 flex items-center gap-2"&gt;
+    &lt;AuthButton /&gt;
+    &lt;span onclick={() =&gt; (store.darkMode = !store.darkMode)}&gt;
+        &lt;Sun size={25} /&gt;  &lt;!-- or Moon --&gt;
+    &lt;/span&gt;
+&lt;/div&gt;</pre
+	>
+	<p>
+		<strong>Fix:</strong> Change <code>gap-2</code> to <code>gap-3</code> (12px) — a small but noticeable increase.
+	</p>
+	<p class="label">Single line change. Consistent across all screen sizes.</p>
+</div>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	Does this look right? If approved, all 4 package designs are complete — I'll move to writing the full design doc.
+</p>

@@ -1,0 +1,24 @@
+<h2>✅ Tooltip: Portal Approach</h2>
+<p class="subtitle">Calendar tooltips render at document body level — never clipped</p>
+
+<div style="padding: 1rem; background: var(--bg-highlight); border-radius: 8px; margin-bottom: 1.5rem">
+	<p>
+		<strong>Approach:</strong> Create a shared <code>Tooltip.svelte</code> component that uses
+		<code>{@render}</code> or portal pattern to render at document level, positioning relative to the target
+		element's bounding rect.
+	</p>
+</div>
+
+<h3>Calendar — Next Issue</h3>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	<strong>Question 5:</strong> For <strong>#12 (Fix scroll bar behavior in calendar view)</strong> — the issue body
+	says "needs investigation to determine exact behavior." What specifically have you observed?<br /><br />
+	Looking at the code, each calendar day square has <code>overflow-y-auto</code> (line 119 of calendar/+page.svelte).
+	Possible issues:<br /><br />
+	<strong>A)</strong> The scrollbar appears <em>inside</em> each small day square when there are many tasks — looks
+	messy or misaligned<br />
+	<strong>B)</strong> The calendar container itself scrolls when it shouldn't (e.g. horizontal scroll on the grid)<br />
+	<strong>C)</strong> Scrollbars appear inconsistently — some days show them, others don't, creating visual noise<br />
+	<strong>D)</strong> Something else — describe what you're seeing
+</p>

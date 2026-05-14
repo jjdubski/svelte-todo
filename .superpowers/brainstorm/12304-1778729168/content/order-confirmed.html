@@ -1,0 +1,39 @@
+<h2>✅ Order Confirmed: Dependency-First</h2>
+<p class="subtitle">1️⃣ Mobile Nav → 2️⃣ Archived Page → 3️⃣ Calendar → 4️⃣ Polish</p>
+
+<div class="section">
+	<h3>📐 Dependencies within packages:</h3>
+	<div style="padding-left: 1rem">
+		<p><strong>Package B (Mobile Nav):</strong></p>
+		<div style="padding-left: 1.5rem">
+			<p>
+				#11 + #13 → #8 → #15 → #2 (all in order)<br />
+				<span class="label" style="font-size: 0.8rem">Sub-issues done before parent closes</span>
+			</p>
+		</div>
+		<p style="margin-top: 0.75rem"><strong>Package C (Archived Page):</strong></p>
+		<div style="padding-left: 1.5rem">
+			<p>#5 (research) → #6 (component) → #7 (button) + #9 (selection) → #3</p>
+		</div>
+		<p style="margin-top: 0.75rem"><strong>Package D (Calendar):</strong></p>
+		<div style="padding-left: 1.5rem">
+			<p>#14 + #12 → #10 → #4 <span class="label" style="font-size: 0.8rem">(bugs before mobile work)</span></p>
+		</div>
+		<p style="margin-top: 0.75rem"><strong>Package A (Polish):</strong></p>
+		<div style="padding-left: 1.5rem">
+			<p>#1 standalone</p>
+		</div>
+	</div>
+</div>
+
+<p style="margin-top: 2rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	<strong>Question 2:</strong> For the navigation pattern investigation (#5 — "resolve vs other navigation
+	patterns"):<br /><br />
+	The calendar page currently uses <code>resolve('/')</code> while other pages don't have back buttons at all. Would
+	you like me to:<br /><br />
+	<strong>A)</strong> Investigate the current patterns, recommend a consistent approach, and document findings before
+	building the shared back button<br />
+	<strong>B)</strong> Skip investigation — just build the shared BackButton component using standard
+	<code>href</code> links (SvelteKit's recommended approach)<br />
+	<strong>C)</strong> Use <code>goto()</code> consistently since it gives more control
+</p>

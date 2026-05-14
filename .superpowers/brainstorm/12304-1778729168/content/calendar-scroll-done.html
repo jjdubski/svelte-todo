@@ -1,0 +1,23 @@
+<h2>✅ Calendar Scroll: Remove &amp; Clip/Truncate</h2>
+<p class="subtitle">No scrollbars in day squares — clip overflow or truncate task text</p>
+
+<div style="padding: 1rem; background: var(--bg-highlight); border-radius: 8px; margin-bottom: 1.5rem">
+	<p><strong>Fix for #12:</strong></p>
+	<ul>
+		<li>Remove <code>overflow-y-auto</code> from day squares</li>
+		<li>Tasks beyond visible area get clipped or truncated</li>
+		<li>Full task list still accessible via DayDetailModal click</li>
+	</ul>
+</div>
+
+<h3>Calendar — Last Issue (#10)</h3>
+
+<p style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-highlight); border-radius: 8px">
+	<strong>Question 6:</strong> For <strong>#10 (Make calendar page mobile-friendly)</strong> — the calendar already
+	has some responsive styles (shorter weekday labels, smaller text on mobile). What's the main pain point?<br /><br />
+	<strong>A)</strong> The 7-column grid is too cramped on small phones — consider switching to a condensed week or
+	list view below a certain breakpoint<br />
+	<strong>B)</strong> Touch targets (day squares, nav buttons) are too small for finger taps<br />
+	<strong>C)</strong> Task text within squares is unreadable on mobile — only show dots/indicators, details on tap<br />
+	<strong>D)</strong> All of the above — whatever makes sense given the constraints
+</p>

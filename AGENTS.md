@@ -1,6 +1,6 @@
 # AGENTS.md — svelte-todo
 
-Single-package Svelte 5 + SvelteKit 2 SPA. Plain JS (no TypeScript), JSDoc types.
+Single-package Svelte 5 + SvelteKit 2 SPA. Plain JS (`checkJs: false` — JSDoc comments exist but are NOT type-checked).
 
 ## DO NOT READ .env FILE NO MATTER WHAT, use .env.example for reference if needed
 
@@ -15,7 +15,9 @@ Single-package Svelte 5 + SvelteKit 2 SPA. Plain JS (no TypeScript), JSDoc types
 | E2E (Playwright)    | `npm run test:e2e`                       |
 | Full test suite     | `npm run test` (Vitest → Playwright)     |
 | Lint                | `npm run lint`                           |
+| Lint + fix          | `npm run lint:fix`                       |
 | Auto-format         | `npm run format`                         |
+| Format check        | `npm run format:check`                   |
 
 ## Architecture
 
@@ -32,18 +34,18 @@ Single-package Svelte 5 + SvelteKit 2 SPA. Plain JS (no TypeScript), JSDoc types
 
 ## Tooling quirks
 
-- **Prettier**: tabs, single quotes, no trailing commas, 100 print width. `prettier-plugin-svelte` + `prettier-plugin-tailwindcss`.
+- **Prettier**: tabs, tabWidth 4, single quotes, no trailing commas, 120 print width. `prettier-plugin-svelte` + `prettier-plugin-tailwindcss`.
 - **ESLint flat config** (`eslint.config.js`). Key overrides: `no-unused-vars` off, `svelte/no-at-html-tags` off (markdown rendering), `svelte/prefer-svelte-reactivity` off.
-- **Husky pre-commit**: `npm run lint:fix` → `lint-staged` (Prettier on all files) → `npm run test`.
+- **Husky**: pre-commit runs `npm run lint:fix` → `lint-staged` (Prettier on all files). pre-push runs `npm run test`.
 - **Playwright**: runs against production build (`npm run build && npm run preview`), not dev server.
 - **.npmrc**: `engine-strict=true` — will fail if wrong Node version.
 - **Tailwind v4** via `@tailwindcss/postcss`. Existing `tailwind.config.js` is vestigial (v4 auto-detects classes).
 - **PWA**: auto-registered via `vite-plugin-pwa` with `autoUpdate`.
 - **Env defaults**: `vite.config.js` sets defaults for optional public env vars so `$env/static/public` doesn't fail at build time.
-- **CI workflow** (`.github/workflows/start`) is a GitHub starter template — does NOT run tests or build.
+- **CI**: `.github/workflows/start` is a GitHub starter template (no-op). `.github/workflows/test.yml` runs `npm test` on PRs to `main`.
 
 ## Testing
 
-- Unit tests in `src/lib/__tests__/` — Vitest with `environment: 'node'`.
+- Unit tests in `src/lib/__tests__/` (8 files: `authIntegration`, `authStore`, `calendarFilter`, `markdown`, `statsComputation`, `storage`, `todoService`, `todoStore`) — Vitest with `environment: 'node'`.
 - E2E in `e2e/` — Playwright, single worker, 1 retry.
-- Pre-commit hook runs full test suite (`npm run test`).
+- Pre-push hook runs full test suite.

@@ -1,0 +1,55 @@
+<h2>🎯 Moving to Design Phase</h2>
+<p class="subtitle">I'll present the plan and design for each package, getting approval as we go.</p>
+
+<div class="section">
+	<h3>Collected Decisions So Far</h3>
+	<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem">
+		<tr>
+			<td style="padding: 0.25rem 0; vertical-align: top"><strong>Order:</strong></td>
+			<td style="padding: 0.25rem 0">Nav → Archived → Calendar → Polish</td>
+		</tr>
+		<tr>
+			<td style="padding: 0.25rem 0; vertical-align: top"><strong>#5 (investigation):</strong></td>
+			<td style="padding: 0.25rem 0">Skip — use standard <code>&lt;a&gt;</code> links for BackButton</td>
+		</tr>
+		<tr>
+			<td style="padding: 0.25rem 0; vertical-align: top"><strong>#9 (meta+shift):</strong></td>
+			<td style="padding: 0.25rem 0">Replicate board page's keyboard selection pattern</td>
+		</tr>
+		<tr>
+			<td style="padding: 0.25rem 0; vertical-align: top"><strong>#14 (tooltip):</strong></td>
+			<td style="padding: 0.25rem 0">Portal approach — render at document level</td>
+		</tr>
+		<tr>
+			<td style="padding: 0.25rem 0; vertical-align: top"><strong>#12 (scrollbar):</strong></td>
+			<td style="padding: 0.25rem 0">Remove <code>overflow-y-auto</code>, clip/truncate</td>
+		</tr>
+		<tr>
+			<td style="padding: 0.25rem 0; vertical-align: top"><strong>#10 (mobile):</strong></td>
+			<td style="padding: 0.25rem 0">All responsive improvements needed</td>
+		</tr>
+	</table>
+</div>
+
+<div class="section">
+	<h3>Proposed Execution Approach</h3>
+	<p><strong>Recommended: Sequential Package Pipeline</strong> (as chosen)</p>
+	<ul>
+		<li>Complete each package fully before starting the next</li>
+		<li>Within each package: sub-issues → parent close order</li>
+		<li>No context switching between packages</li>
+		<li>Each package leaves the codebase in a working, releasable state</li>
+	</ul>
+</div>
+
+<div class="section">
+	<h3>Starting: Package B — Mobile Navigation Fixes</h3>
+	<p>Sub-issues in execution order:</p>
+	<ol>
+		<li><strong>#13</strong> Increase text size in mobile dropdown</li>
+		<li><strong>#11</strong> Center the mobile dropdown itself</li>
+		<li>→ completes <strong>#8</strong> (Center dropdown nav)</li>
+		<li><strong>#15</strong> Fix triangle animation persistence</li>
+		<li>→ closes <strong>#2</strong> (Mobile navigation fixes)</li>
+	</ol>
+</div>
