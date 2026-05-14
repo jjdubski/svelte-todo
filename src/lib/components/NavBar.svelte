@@ -63,7 +63,7 @@
 			</div>
 		</div>
 
-		<div class="relative flex sm:hidden">
+		<div class="relative flex justify-center sm:hidden">
 			<div
 				class="mobile-nav-toggle flex cursor-pointer items-center gap-2 rounded-md px-2 py-1"
 				onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
@@ -78,12 +78,12 @@
 				aria-expanded={mobileMenuOpen}
 				aria-label="Toggle mobile navigation menu"
 			>
-				<span class="text-sm font-medium">{currentPageLabel}</span>
+				<span class="text-sm font-medium max-sm:text-base">{currentPageLabel}</span>
 				<svg
 					width="10"
 					height="8"
 					viewBox="0 0 10 8"
-					class="transition-transform duration-200"
+					class="origin-center transition-transform duration-200"
 					class:rotate-180={mobileMenuOpen}
 					aria-hidden="true"
 				>
@@ -93,7 +93,7 @@
 
 			{#if mobileMenuOpen}
 				<div
-					class="mobile-nav-dropdown absolute top-full left-0 z-50 mt-2 min-w-40 rounded-md border p-1 shadow-lg"
+					class="mobile-nav-dropdown absolute top-full left-1/2 z-50 mt-2 min-w-40 -translate-x-1/2 rounded-md border p-1 shadow-lg"
 					style="background: var(--card-bg); border-color: var(--border);"
 				>
 					{#each links as link (link.href)}
@@ -102,7 +102,7 @@
 								href={link.href}
 								data-sveltekit-preload-data
 								onclick={() => (mobileMenuOpen = false)}
-								class="nav-link block rounded px-3 py-2 text-sm font-medium no-underline"
+								class="nav-link block rounded px-3 py-2 text-sm font-medium no-underline max-sm:text-base"
 							>
 								{link.label}
 							</a>
