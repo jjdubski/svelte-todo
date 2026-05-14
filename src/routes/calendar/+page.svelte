@@ -1,6 +1,7 @@
 <script>
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import BackButton from '$lib/components/BackButton.svelte';
+	import Tooltip from '$lib/components/Tooltip.svelte';
 	import { ChevronLeft, ChevronRight, Check } from 'lucide-svelte';
 	import { format, addMonths, subMonths, isToday } from 'date-fns';
 	import DayDetailModal from '$lib/components/DayDetailModal.svelte';
@@ -9,6 +10,8 @@
 
 	let currentDate = $state(new Date());
 	let selectedDate = $state(null);
+	let tooltipTarget = $state(null);
+	let tooltipTask = $state(null);
 
 	let currentMonthName = $derived(format(currentDate, 'MMMM'));
 	let currentYearNum = $derived(currentDate.getFullYear());
@@ -109,7 +112,7 @@
 				{@const isDayToday = isToday(date)}
 
 				<div
-					class="flex aspect-square cursor-pointer flex-col gap-1 overflow-y-auto rounded-lg border p-1 sm:rounded-xl sm:p-2"
+					class="flex aspect-square cursor-pointer flex-col gap-1 rounded-lg border p-1 sm:rounded-xl sm:p-2"
 					style="border-color: {isDayToday
 						? 'var(--btn-primary)'
 						: 'var(--border)'}; background: var(--todo-bg);"
@@ -125,69 +128,26 @@
 						{day}
 					</span>
 					{#each tasks as task (task.id)}
-						<div class="tooltip-container relative">
-							<div
-								class="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] sm:px-2 sm:py-1 sm:text-xs"
-								style="background: var(--input-bg); color: {task.completed
-									? 'var(--text-muted)'
-									: 'var(--text-heading)'}; text-decoration: {task.completed
-									? 'line-through'
-									: 'none'};"
-							>
-								{#if task.completed}
-									<Check size={10} class="hidden sm:block" style="color: var(--btn-save);" />
-								{/if}
-								<span class="truncate">{task.title}</span>
-							</div>
-
-							<div
-								class="tooltip pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-[220px] rounded-lg border px-2 py-1 text-xs shadow-lg"
-								style="background: var(--card-bg); border-color: var(--border);"
-							>
-								<div class="flex items-center gap-1.5">
-									<span class="font-semibold" style="color: var(--text-heading);">
-										{task.title}
-									</span>
-									{#if task.priority}
-										<span
-											class="rounded px-1 text-[10px] font-bold text-white uppercase"
-											style="background: {task.priority === 'high'
-												? 'var(--priority-high)'
-												: task.priority === 'low'
-													? 'var(--priority-low)'
-													: 'var(--priority-medium)'}"
-										>
-											{task.priority}
-										</span>
-									{/if}
-								</div>
-
-								{#if task.description}
-									<p class="m-0 mt-0.5" style="color: var(--text-secondary);">
-										{task.description.length > 80
-											? `${task.description.slice(0, 80)}...`
-											: task.description}
-									</p>
-								{/if}
-
-								{#if task.tags && task.tags.length > 0}
-									<div class="mt-0.5 flex flex-wrap gap-1">
-										{#each task.tags.slice(0, 3) as tag (tag)}
-											<span
-												class="rounded px-1 text-[10px] text-white"
-												style="background: {store.tagColors[tag] || '#64748b'}"
-											>
-												{tag}
-											</span>
-										{/each}
-									</div>
-								{/if}
-
-								<div
-									class="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-r border-b"
-									style="background: var(--card-bg); border-color: var(--border);"
-								></div>
-							</div>
+						<div
+							class="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] sm:px-2 sm:py-1 sm:text-xs"
+							style="background: var(--input-bg); color: {task.completed
+								? 'var(--text-muted)'
+								: 'var(--text-heading)'}; text-decoration: {task.completed ? 'line-through' : 'none'};"
+							onmouseenter={(e) => {
+								tooltipTask = task;
+								tooltipTarget = e.currentTarget;
+							}}
+							onmouseleave={() => {
+								tooltipTarget = null;
+							}}
+							role="button"
+							tabindex="0"
+							aria-label={task.title}
+						>
+							{#if task.completed}
+								<Check size={10} class="hidden sm:block" style="color: var(--btn-save);" />
+							{/if}
+							<span class="truncate">{task.title}</span>
 						</div>
 					{/each}
 				</div>
@@ -196,23 +156,12 @@
 	</div>
 
 	<DayDetailModal {selectedDate} onclose={() => (selectedDate = null)} />
+	<Tooltip
+		title={tooltipTask?.title}
+		description={tooltipTask?.description}
+		priority={tooltipTask?.priority}
+		tags={tooltipTask?.tags || []}
+		tagColors={store.tagColors}
+		targetEl={tooltipTarget}
+	/>
 </div>
-
-<style>
-	.tooltip {
-		opacity: 0;
-		visibility: hidden;
-		transform: translate(-50%, 6px);
-		transition:
-			opacity 0.15s ease,
-			transform 0.15s ease,
-			visibility 0s linear;
-		transition-delay: 0.2s;
-	}
-
-	.tooltip-container:hover .tooltip {
-		opacity: 1;
-		visibility: visible;
-		transform: translate(-50%, 0);
-	}
-</style>
