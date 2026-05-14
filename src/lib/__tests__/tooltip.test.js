@@ -107,8 +107,7 @@ function getTooltipTransform(placement) {
  * @returns {{ className: string, arrowClasses: string }}
  */
 function getArrowClasses(placement) {
-	const base =
-		'absolute left-1/2 h-2 w-2 -translate-x-1/2 rotate-45';
+	const base = 'absolute left-1/2 h-2 w-2 -translate-x-1/2 rotate-45';
 
 	if (placement === 'below') {
 		return {
@@ -360,12 +359,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const targetRect = { top: 300, left: 400, width: 100, height: 30, bottom: 330, right: 500 };
 		const tooltipRect = { width: 200, height: 100 };
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			defaultViewport.height
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, defaultViewport.height);
 
 		expect(result.placement).toBe('above');
 		// Horizontally centered on target
@@ -379,12 +373,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const targetRect = { top: 10, left: 400, width: 100, height: 30, bottom: 40, right: 500 };
 		const tooltipRect = { width: 200, height: 100 };
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			defaultViewport.height
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, defaultViewport.height);
 
 		expect(result.placement).toBe('below');
 		expect(result.top).toBe(40 + 8); // target.bottom + offset
@@ -395,12 +384,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const targetRect = { top: 300, left: 980, width: 40, height: 30, bottom: 330, right: 1020 };
 		const tooltipRect = { width: 200, height: 100 };
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			defaultViewport.height
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, defaultViewport.height);
 
 		// Should clamp so tooltip doesn't go off right edge
 		const maxLeft = defaultViewport.width - 8 - 200 / 2; // 1024 - 8 - 100 = 916
@@ -412,12 +396,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const targetRect = { top: 300, left: -10, width: 20, height: 30, bottom: 330, right: 10 };
 		const tooltipRect = { width: 200, height: 100 };
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			defaultViewport.height
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, defaultViewport.height);
 
 		// Should clamp so tooltip doesn't go off left edge
 		const minLeft = 8 + 200 / 2; // 8 + 100 = 108
@@ -429,12 +408,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const targetRect = { top: 10, left: 400, width: 100, height: 800, bottom: 810, right: 500 };
 		const tooltipRect = { width: 200, height: 100 };
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			defaultViewport.height
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, defaultViewport.height);
 
 		// Should fall back to above
 		expect(result.placement).toBe('above');
@@ -467,12 +441,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const targetRect = { top: 300, left: 400, width: 100, height: 30, bottom: 330, right: 500 };
 		const tooltipRect = { width: 0, height: 100 };
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			defaultViewport.height
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, defaultViewport.height);
 
 		// Should still calculate, halfTooltipWidth = 0
 		expect(result.left).toBe(450); // center of target
@@ -483,12 +452,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const targetRect = { top: 300, left: 400, width: 100, height: 30, bottom: 330, right: 500 };
 		const tooltipRect = { width: 200, height: 0 };
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			defaultViewport.height
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, defaultViewport.height);
 
 		expect(result.placement).toBe('above');
 	});
@@ -499,12 +463,7 @@ describe('Tooltip — calculateTooltipPosition()', () => {
 		const tooltipRect = { width: 200, height: 100 };
 		const viewportHeight = 750;
 
-		const result = calculateTooltipPosition(
-			targetRect,
-			tooltipRect,
-			defaultViewport.width,
-			viewportHeight
-		);
+		const result = calculateTooltipPosition(targetRect, tooltipRect, defaultViewport.width, viewportHeight);
 
 		// Above placement, but clamped so top doesn't go above viewport padding
 		expect(result.top).toBeGreaterThanOrEqual(8 + 100); // viewportPadding + tooltipHeight
