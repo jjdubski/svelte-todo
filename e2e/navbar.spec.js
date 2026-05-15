@@ -111,8 +111,8 @@ test.describe('NavBar', () => {
 			await page.locator('.mobile-nav-toggle').click();
 			await expect(page.locator('.mobile-nav-dropdown')).toBeVisible();
 
-			// Click outside (on the main heading area)
-			await page.locator('h1').click();
+			// Click outside the dropdown near the bottom of the mobile viewport
+			await page.mouse.click(20, 640);
 
 			// Dropdown should close
 			await expect(page.locator('.mobile-nav-dropdown')).not.toBeVisible();

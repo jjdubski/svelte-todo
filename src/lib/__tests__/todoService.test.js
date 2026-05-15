@@ -438,6 +438,24 @@ describe('todoService', () => {
 			expect(mockUser.todos).toHaveLength(0);
 			expect(mockUser.save).toHaveBeenCalled();
 		});
+
+		it('skips malformed guest todo entries while preserving dark mode preference', async () => {
+			const mockUser = createMockUser();
+			mockFindOne.mockResolvedValue(mockUser);
+
+			await migrateGuestData('test-user-id', {
+				todos: [null, 'bad', { id: 'valid-1', title: 'Valid guest task', completed: false }],
+				archivedTodos: [{ id: 'archived-1', title: 'Archived guest task', completed: true }],
+				darkMode: true
+			});
+
+			expect(mockUser.todos).toEqual([{ id: 'valid-1', title: 'Valid guest task', completed: false }]);
+			expect(mockUser.archivedTodos).toEqual([
+				{ id: 'archived-1', title: 'Archived guest task', completed: true }
+			]);
+			expect(mockUser.darkMode).toBe(true);
+			expect(mockUser.save).toHaveBeenCalled();
+		});
 	});
 
 	describe('importData', () => {

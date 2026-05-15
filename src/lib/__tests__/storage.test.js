@@ -204,6 +204,25 @@ describe('storage', () => {
 			expect(warnSpy).toHaveBeenCalled();
 			warnSpy.mockRestore();
 		});
+
+		it('treats corrupt guest cache entries as empty while preserving valid fields', () => {
+			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			mockStore['todos'] = 'not-json{{{';
+			mockStore['archivedTodos'] = JSON.stringify([{ id: 2, title: 'Archived' }]);
+			mockStore['customTags'] = JSON.stringify(['safe-tag']);
+			mockStore['tagColors'] = JSON.stringify({ 'safe-tag': '#00ff00' });
+			mockStore['darkMode'] = JSON.stringify(false);
+
+			const data = getGuestData();
+
+			expect(data.todos).toEqual([]);
+			expect(data.archivedTodos).toEqual([{ id: 2, title: 'Archived' }]);
+			expect(data.customTags).toEqual(['safe-tag']);
+			expect(data.tagColors).toEqual({ 'safe-tag': '#00ff00' });
+			expect(data.darkMode).toBe(false);
+			expect(warnSpy).toHaveBeenCalled();
+			warnSpy.mockRestore();
+		});
 	});
 
 	describe('clearGuestData', () => {
