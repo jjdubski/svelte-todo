@@ -12,4 +12,5 @@
 - Ensure svelte5 syntax and best practices are used throughout the codebase
 - Make sure there is test coverage for localStorage (and switching from localStorage to authenticated flow)
 - Add animations to buttons where they are missing
+- Add the ability to add multiple profiles/switch
 - Come up with new ideas/features
