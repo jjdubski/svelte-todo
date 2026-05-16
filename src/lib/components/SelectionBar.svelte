@@ -9,12 +9,12 @@
 </script>
 
 {#if count > 0}
-	<div class="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 sm:w-auto">
+	<div class="fixed bottom-6 left-1/2 z-50 w-auto max-w-md -translate-x-1/2">
 		<div
-			class="flex flex-wrap items-center justify-center gap-2 rounded-xl border px-3 py-2.5 shadow-lg sm:gap-3 sm:px-4 sm:py-3"
+			class="flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 shadow-lg sm:gap-3 sm:px-4 sm:py-3"
 			style="background: var(--card-bg); border-color: var(--border);"
 		>
-			<span class="text-sm font-medium" style="color: var(--text-heading);">
+			<span class="text-sm font-medium whitespace-nowrap" style="color: var(--text-heading);">
 				{count} selected
 			</span>
 			{#each actions as action (action.label)}

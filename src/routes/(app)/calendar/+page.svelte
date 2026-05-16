@@ -104,7 +104,7 @@
 		{@const isDayToday = isToday(date)}
 
 		<div
-			class="relative flex aspect-square cursor-pointer flex-col gap-1 overflow-hidden rounded-lg border p-1 sm:overflow-visible sm:rounded-xl sm:p-2"
+			class="relative flex aspect-square cursor-pointer flex-col gap-0.5 overflow-hidden rounded-lg border p-1 sm:rounded-xl sm:p-2"
 			style="border-color: {isDayToday ? 'var(--btn-primary)' : 'var(--border)'}; background: var(--todo-bg);"
 			onclick={() => (selectedDate = dateStr)}
 			onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedDate = dateStr)}
@@ -112,14 +112,14 @@
 			tabindex="0"
 		>
 			<span
-				class="mb-1 block text-xs font-bold sm:text-sm"
+				class="block text-xs font-bold sm:text-sm"
 				style="color: {isDayToday ? 'var(--btn-primary)' : 'var(--text-secondary)'};"
 			>
 				{day}
 			</span>
 			{#if tasks.length > 0}
 				<div
-					class="pointer-events-none absolute right-1 bottom-1 left-1 flex max-h-6 flex-col gap-0.5 overflow-hidden sm:hidden"
+					class="pointer-events-none top-1 right-1 left-1 flex max-h-6 flex-col gap-0.5 overflow-hidden sm:hidden"
 				>
 					{#each tasks.slice(0, 4) as task (task.id)}
 						<div class="h-0.5 w-full rounded-full" style="background: {getTaskLineColor(task)};"></div>
@@ -127,10 +127,10 @@
 				</div>
 			{/if}
 
-			<div class="hidden flex-col gap-1 sm:flex">
+			<div class="hidden flex-col gap-0.5 sm:flex">
 				{#each tasks as task (task.id)}
 					<div
-						class="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] sm:px-2 sm:py-1 sm:text-xs"
+						class="flex items-center truncate rounded px-0.5 py-0.25 text-xs sm:px-1 sm:py-0.5"
 						style="background: var(--input-bg); color: {task.completed
 							? 'var(--text-muted)'
 							: 'var(--text-heading)'}; text-decoration: {task.completed ? 'line-through' : 'none'};"

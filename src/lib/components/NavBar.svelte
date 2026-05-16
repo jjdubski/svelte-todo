@@ -50,13 +50,13 @@
 		class="relative flex items-center justify-center gap-1 border-b px-4 py-2"
 		style="background: var(--card-bg); border-color: var(--border); transition: background 0.3s, border-color 0.3s;"
 	>
-		<div class="hidden sm:flex">
+		<div class="hidden min-[700px]:flex">
 			<div class="flex gap-1">
 				{#each links as link (link.href)}
 					<a
 						href={resolve(link.href)}
 						data-sveltekit-preload-data
-						class="nav-link rounded-lg px-2 py-1.5 text-center text-xs font-medium no-underline transition-all sm:px-3 sm:text-sm lg:text-base"
+						class="nav-link rounded-lg px-3 py-1.5 text-center text-xs font-medium no-underline transition-all sm:text-base"
 						class:active={$page.url.pathname === link.href}
 					>
 						{link.label}
@@ -65,7 +65,7 @@
 			</div>
 		</div>
 
-		<div class="relative flex justify-center sm:hidden">
+		<div class="relative flex justify-center min-[700px]:hidden">
 			<div
 				class="mobile-nav-toggle flex cursor-pointer items-center gap-2 rounded-md px-2 py-1"
 				onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
@@ -80,7 +80,7 @@
 				aria-expanded={mobileMenuOpen}
 				aria-label="Toggle mobile navigation menu"
 			>
-				<span class="text-sm font-medium max-sm:text-base">{currentPageLabel}</span>
+				<span class="text-large font-medium">{currentPageLabel}</span>
 				<span
 					class="inline-flex transition-transform duration-200"
 					class:rotate-180={mobileMenuOpen}
@@ -103,7 +103,7 @@
 								href={resolve(link.href)}
 								data-sveltekit-preload-data
 								onclick={() => (mobileMenuOpen = false)}
-								class="nav-link block rounded px-3 py-2 text-sm font-medium no-underline max-sm:text-base"
+								class="nav-link block rounded px-3 py-2 text-base font-medium no-underline"
 							>
 								{link.label}
 							</a>
