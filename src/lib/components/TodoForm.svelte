@@ -11,6 +11,26 @@
 
 	let descTextarea = $state(null);
 
+	function autoResizeTextarea() {
+		if (!descTextarea) return;
+		descTextarea.style.height = 'auto';
+		descTextarea.style.height = descTextarea.scrollHeight + 'px';
+	}
+
+	// Auto-resize textarea when description changes
+	$effect(() => {
+		if (!descTextarea) return;
+		formStore.newDescription; // track dependency
+		// Use microtask to let DOM settle after state change
+		queueMicrotask(() => autoResizeTextarea());
+	});
+
+	$effect(() => {
+		if (!descTextarea) return;
+		descTextarea.addEventListener('input', autoResizeTextarea);
+		return () => descTextarea.removeEventListener('input', autoResizeTextarea);
+	});
+
 	function handleAdd() {
 		if (formStore.newTitle.trim()) {
 			store.addTodo(
@@ -127,7 +147,7 @@
 			<MarkdownToolbar bind:value={formStore.newDescription} textareaRef={descTextarea} />
 			<textarea
 				bind:this={descTextarea}
-				class="w-full resize-y bg-transparent text-sm outline-none sm:text-base"
+				class="w-full resize-none bg-transparent text-sm outline-none sm:text-base"
 				style="min-height: 70px; color: var(--text);"
 				bind:value={formStore.newDescription}
 				placeholder="Add details (Markdown supported)…"

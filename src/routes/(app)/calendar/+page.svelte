@@ -51,34 +51,34 @@
 	}
 </script>
 
-<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+<div class="mb-2 flex items-center justify-between">
 	<h2 class="m-0 text-xl font-semibold sm:text-2xl" style="color: var(--text-heading);">Calendar View</h2>
-	<div class="order-last flex w-full flex-1 items-center justify-center gap-2 sm:order-none sm:w-auto sm:gap-4">
-		<button
-			type="button"
-			class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
-			style="color: var(--text-muted);"
-			onclick={prevMonth}
-		>
-			<ChevronLeft size={24} />
-		</button>
-		<h3
-			class="m-0 text-base font-medium sm:text-lg"
-			style="color: var(--text-heading); width: 140px; text-align: center;"
-		>
-			{currentMonthName}
-			{currentYearNum}
-		</h3>
-		<button
-			type="button"
-			class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
-			style="color: var(--text-muted);"
-			onclick={nextMonth}
-		>
-			<ChevronRight size={24} />
-		</button>
-	</div>
 	<BackButton />
+</div>
+<div class="mb-6 flex items-center justify-center gap-2 sm:gap-4">
+	<button
+		type="button"
+		class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
+		style="color: var(--text-muted);"
+		onclick={prevMonth}
+	>
+		<ChevronLeft size={24} />
+	</button>
+	<h3
+		class="m-0 text-base font-medium sm:text-lg"
+		style="color: var(--text-heading); width: 140px; text-align: center;"
+	>
+		{currentMonthName}
+		{currentYearNum}
+	</h3>
+	<button
+		type="button"
+		class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
+		style="color: var(--text-muted);"
+		onclick={nextMonth}
+	>
+		<ChevronRight size={24} />
+	</button>
 </div>
 
 <div class="grid flex-1 grid-cols-7 gap-px sm:gap-1">

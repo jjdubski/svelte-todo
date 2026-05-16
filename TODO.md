@@ -3,15 +3,11 @@
 - Auto resize text area for tasks page & edit modal (expand & shrink based on content) then return to normal after
 - Update accent color
 - Shrink navbar text slightly to avoid overlap of settings and profile button. It overlaps between 640-700px wide screen
-- Kanban board should either be 3 wide (pending, in progess or done) or stacked vertically (never 2 and then 1)
-- Each theme should have its own accent color
-- Contrast issues with BackButton if color too dark & darkmode on, also with light color and light mode on
-- Accent color should effect the help button as well
-- update btn-primary-hover color to match accent when accent is changed
 - If possible limit the color of colorpicker to not be pure white or pure black, otherwise if user attempts to set white/black just use the default
 - Incorporate shadcn elements into project with shadcn-svelte
 - Console issues:
   - Multiple form field elements in the same form have the same id attribute value. This might prevent the browser from correctly autofilling the form.
     To fix this issue, use unique id attribute values for each form field.
-- Calander page gets weird on certain screen sizes, it should always have 'Calendar View' title on top and the BackButton. If the Month selector can fit that't fine, if it cant force it to be in the row below (how it looks on mobile/small screens already)
+- Kanban board should either be 3 wide (pending, in progess or done) or stacked vertically (never 2 and then 1)
+- Calender page gets weird on certain screen sizes, it should always have 'Calendar View' title on top and the BackButton. If the Month selector can fit that't fine, if it cant force it to be in the row below (how it looks on mobile/small screens already)
 - Mobile/smaller screen uneven select box (bottom)

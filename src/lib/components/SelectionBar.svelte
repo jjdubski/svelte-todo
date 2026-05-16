@@ -9,9 +9,9 @@
 </script>
 
 {#if count > 0}
-	<div class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+	<div class="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 sm:w-auto">
 		<div
-			class="flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg"
+			class="flex flex-wrap items-center justify-center gap-2 rounded-xl border px-3 py-2.5 shadow-lg sm:gap-3 sm:px-4 sm:py-3"
 			style="background: var(--card-bg); border-color: var(--border);"
 		>
 			<span class="text-sm font-medium" style="color: var(--text-heading);">

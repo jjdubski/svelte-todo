@@ -27,9 +27,29 @@
 	let editSubtasks = $state(todo.subtasks ? [...todo.subtasks] : []);
 
 	let titleInput;
+	let descTextarea;
 
 	$effect(() => {
 		titleInput?.focus();
+	});
+
+	function autoResizeTextarea() {
+		if (!descTextarea) return;
+		descTextarea.style.height = 'auto';
+		descTextarea.style.height = descTextarea.scrollHeight + 'px';
+	}
+
+	// Auto-resize textarea when editDescription changes
+	$effect(() => {
+		if (!descTextarea) return;
+		editDescription; // track dependency
+		queueMicrotask(() => autoResizeTextarea());
+	});
+
+	$effect(() => {
+		if (!descTextarea) return;
+		descTextarea.addEventListener('input', autoResizeTextarea);
+		return () => descTextarea.removeEventListener('input', autoResizeTextarea);
 	});
 
 	$effect(() => {
@@ -122,10 +142,11 @@
 				aria-label="Edit title"
 			/>
 			<textarea
+				bind:this={descTextarea}
 				bind:value={editDescription}
 				placeholder="Description"
 				rows="2"
-				class="resize-vertical min-h-[60px] w-full rounded-lg border px-3 py-2.5 text-sm sm:text-base"
+				class="min-h-[60px] w-full resize-none rounded-lg border px-3 py-2.5 text-sm sm:text-base"
 				aria-label="Edit description"
 			></textarea>
 			<div class="flex flex-wrap gap-2">

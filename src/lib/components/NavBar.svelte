@@ -56,7 +56,7 @@
 					<a
 						href={resolve(link.href)}
 						data-sveltekit-preload-data
-						class="nav-link rounded-lg px-3 py-1.5 text-center text-xs font-medium no-underline transition-all sm:text-base"
+						class="nav-link rounded-lg px-2 py-1.5 text-center text-xs font-medium no-underline transition-all sm:px-3 sm:text-sm lg:text-base"
 						class:active={$page.url.pathname === link.href}
 					>
 						{link.label}

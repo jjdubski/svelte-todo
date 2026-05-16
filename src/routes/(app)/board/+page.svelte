@@ -184,7 +184,7 @@
 	<BackButton />
 </div>
 
-<div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+<div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
 	{#each columns as col (col.key)}
 		<div
 			class="board-column flex flex-col rounded-xl border"
