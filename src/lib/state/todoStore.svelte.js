@@ -800,9 +800,10 @@ class TodoStore {
 		const current = this._createHistorySnapshot();
 
 		this._undoStack = this._undoStack.slice(0, -1);
-		this._redoStack = [...this._redoStack, { action: entry.action, snapshot: current, timestamp: Date.now() }].slice(
-			-HISTORY_STACK_LIMIT
-		);
+		this._redoStack = [
+			...this._redoStack,
+			{ action: entry.action, snapshot: current, timestamp: Date.now() }
+		].slice(-HISTORY_STACK_LIMIT);
 
 		this._restoreHistorySnapshot(entry.snapshot);
 		this.showToast(`Undid ${entry.action}`, 'success');
@@ -815,9 +816,10 @@ class TodoStore {
 		const current = this._createHistorySnapshot();
 
 		this._redoStack = this._redoStack.slice(0, -1);
-		this._undoStack = [...this._undoStack, { action: entry.action, snapshot: current, timestamp: Date.now() }].slice(
-			-HISTORY_STACK_LIMIT
-		);
+		this._undoStack = [
+			...this._undoStack,
+			{ action: entry.action, snapshot: current, timestamp: Date.now() }
+		].slice(-HISTORY_STACK_LIMIT);
 
 		this._restoreHistorySnapshot(entry.snapshot);
 		this.showToast(`Redid ${entry.action}`, 'success');
@@ -830,91 +832,113 @@ class TodoStore {
 	_applyQueryTokens(tokens) {
 		this._isApplyingQueryTokens = true;
 
-		let nextFilterTags = [];
-		let nextFilterPriority = 'all';
-		let nextFilterStatus = 'all';
-		let nextFilterCategory = '';
-		let nextSortBy = 'manual';
-		let dueMode = 'none';
-		let dueDates = [];
+		try {
+			let nextFilterTags = [];
+			let nextFilterPriority = 'all';
+			let nextFilterStatus = 'all';
+			let nextFilterCategory = '';
+			let nextSortBy = 'manual';
+			let dueMode = 'none';
+			let dueDates = [];
 
-		for (const token of tokens) {
-			if (!token || !token.key) continue;
-			const value = (token.value || '').trim();
-			if (!value) continue;
+			for (const token of tokens) {
+				if (!token || !token.key) continue;
+				const value = (token.value || '').trim();
+				if (!value) continue;
 
-			if (token.key === 'tag') {
-				const normalizedTag = value.toLowerCase();
-				if (!nextFilterTags.includes(normalizedTag)) {
-					nextFilterTags = [...nextFilterTags, normalizedTag];
-				}
-				continue;
-			}
-
-			if (token.key === 'priority') {
-				const priorityValue = value.toLowerCase();
-				if (priorityValue === 'high' || priorityValue === 'medium' || priorityValue === 'low') {
-					nextFilterPriority = priorityValue;
-				}
-				continue;
-			}
-
-			if (token.key === 'is') {
-				nextFilterStatus = _normalizeStatusTokenValue(value);
-				continue;
-			}
-
-			if (token.key === 'category') {
-				const categoryMatch = this.categories.find((cat) => cat.toLowerCase() === value.toLowerCase());
-				nextFilterCategory = categoryMatch || value;
-				continue;
-			}
-
-			if (token.key === 'sort') {
-				nextSortBy = _normalizeSortTokenValue(value);
-				continue;
-			}
-
-			if (token.key === 'due') {
-				if (value.toLowerCase() === 'overdue') {
-					dueMode = 'overdue';
-					dueDates = [];
+				if (token.key === 'tag') {
+					const normalizedTag = value.toLowerCase();
+					if (!nextFilterTags.includes(normalizedTag)) {
+						nextFilterTags = [...nextFilterTags, normalizedTag];
+					}
 					continue;
 				}
 
-				const normalizedDate = _normalizeDateTokenValue(value);
-				if (!normalizedDate) continue;
-
-				if (dueMode !== 'dates') {
-					dueMode = 'dates';
-					dueDates = [];
+				if (token.key === 'priority') {
+					const priorityValue = value.toLowerCase();
+					if (priorityValue === 'high' || priorityValue === 'medium' || priorityValue === 'low') {
+						nextFilterPriority = priorityValue;
+					}
+					continue;
 				}
-				dueDates = [...dueDates, normalizedDate];
+
+				if (token.key === 'is') {
+					nextFilterStatus = _normalizeStatusTokenValue(value);
+					continue;
+				}
+
+				if (token.key === 'category') {
+					const categoryMatch = this.categories.find((cat) => cat.toLowerCase() === value.toLowerCase());
+					nextFilterCategory = categoryMatch || value;
+					continue;
+				}
+
+				if (token.key === 'sort') {
+					nextSortBy = _normalizeSortTokenValue(value);
+					continue;
+				}
+
+				if (token.key === 'due') {
+					if (value.toLowerCase() === 'overdue') {
+						dueMode = 'overdue';
+						dueDates = [];
+						continue;
+					}
+
+					const normalizedDate = _normalizeDateTokenValue(value);
+					if (!normalizedDate) continue;
+
+					if (dueMode !== 'dates') {
+						dueMode = 'dates';
+						dueDates = [];
+					}
+					dueDates = [...dueDates, normalizedDate];
+				}
 			}
+
+			let nextFilterDateFrom = '';
+			let nextFilterDateTo = '';
+			let nextFilterDueKeyword = '';
+
+			if (dueMode === 'overdue') {
+				nextFilterDueKeyword = 'overdue';
+			} else if (dueMode === 'dates' && dueDates.length > 0) {
+				const sortedDates = [...dueDates].sort();
+				nextFilterDateFrom = sortedDates[0];
+				nextFilterDateTo = sortedDates[sortedDates.length - 1];
+			}
+
+			const tagsAreEqual =
+				this.filterTags.length === nextFilterTags.length &&
+				this.filterTags.every((tag, idx) => tag === nextFilterTags[idx]);
+
+			if (!tagsAreEqual) {
+				this.filterTags = nextFilterTags;
+			}
+			if (this.filterPriority !== nextFilterPriority) {
+				this.filterPriority = nextFilterPriority;
+			}
+			if (this.filterStatus !== nextFilterStatus) {
+				this.filterStatus = nextFilterStatus;
+			}
+			if (this.filterCategory !== nextFilterCategory) {
+				this.filterCategory = nextFilterCategory;
+			}
+			if (this.sortBy !== nextSortBy) {
+				this.sortBy = nextSortBy;
+			}
+			if (this.filterDateFrom !== nextFilterDateFrom) {
+				this.filterDateFrom = nextFilterDateFrom;
+			}
+			if (this.filterDateTo !== nextFilterDateTo) {
+				this.filterDateTo = nextFilterDateTo;
+			}
+			if (this.filterDueKeyword !== nextFilterDueKeyword) {
+				this.filterDueKeyword = nextFilterDueKeyword;
+			}
+		} finally {
+			this._isApplyingQueryTokens = false;
 		}
-
-		let nextFilterDateFrom = '';
-		let nextFilterDateTo = '';
-		let nextFilterDueKeyword = '';
-
-		if (dueMode === 'overdue') {
-			nextFilterDueKeyword = 'overdue';
-		} else if (dueMode === 'dates' && dueDates.length > 0) {
-			const sortedDates = [...dueDates].sort();
-			nextFilterDateFrom = sortedDates[0];
-			nextFilterDateTo = sortedDates[sortedDates.length - 1];
-		}
-
-		this.filterTags = nextFilterTags;
-		this.filterPriority = nextFilterPriority;
-		this.filterStatus = nextFilterStatus;
-		this.filterCategory = nextFilterCategory;
-		this.sortBy = nextSortBy;
-		this.filterDateFrom = nextFilterDateFrom;
-		this.filterDateTo = nextFilterDateTo;
-		this.filterDueKeyword = nextFilterDueKeyword;
-
-		this._isApplyingQueryTokens = false;
 	}
 
 	/**

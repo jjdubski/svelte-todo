@@ -1127,6 +1127,45 @@ describe('_computeFiltered', () => {
 	});
 });
 
+describe('query token synchronization', () => {
+	/** @type {import('../state/todoStore.svelte.js').default} */
+	let store;
+
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', {
+			getItem: vi.fn(() => null),
+			setItem: vi.fn(),
+			removeItem: vi.fn(),
+			clear: vi.fn(),
+			get length() {
+				return 0;
+			},
+			key: vi.fn(() => null)
+		});
+		store = new TodoStore();
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('does not reassign filterTags when parsed tags are unchanged', () => {
+		store.filterTags = ['urgent'];
+		const previousTagsRef = store.filterTags;
+
+		store._applyQueryTokens([{ key: 'tag', value: 'urgent' }]);
+
+		expect(store.filterTags).toBe(previousTagsRef);
+	});
+
+	it('always clears the token-application guard even when parsing throws', () => {
+		store.categories = null;
+
+		expect(() => store._applyQueryTokens([{ key: 'category', value: 'Work' }])).toThrow();
+		expect(store._isApplyingQueryTokens).toBe(false);
+	});
+});
+
 // ── Drag and Drop State Transition Tests ──
 describe('TodoStore drag and drop', () => {
 	/** @type {import('../state/todoStore.svelte.js').default} */

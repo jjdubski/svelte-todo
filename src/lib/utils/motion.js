@@ -107,7 +107,8 @@ export function cubicBezier(x1, y1, x2, y2) {
 		if (t >= 1) return 1;
 
 		const initialSlope = _getSlope(t, x1, x2);
-		const solvedT = initialSlope >= NEWTON_MIN_SLOPE ? _newtonRaphsonIterate(t, x1, x2) : _binarySubdivide(t, x1, x2);
+		const solvedT =
+			initialSlope >= NEWTON_MIN_SLOPE ? _newtonRaphsonIterate(t, x1, x2) : _binarySubdivide(t, x1, x2);
 
 		return _calcBezier(solvedT, y1, y2);
 	};
