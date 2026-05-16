@@ -24,3 +24,4 @@
 - ~~Keyboard shortcuts not added~~ ✅ Fixed (`/`, `n`, `e`, `a`, `?`, `Esc`, `Ctrl+F`)
 - ~~Help dialog now shows page-specific shortcuts~~ ✅ Fixed
 - ~~Multi-select instructions only on board/archived~~ ✅ Fixed
+- fix mobile web app navigation
