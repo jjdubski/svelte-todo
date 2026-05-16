@@ -130,7 +130,7 @@ test.describe('NavBar', () => {
 
 			// Should navigate to /board
 			await page.waitForURL(/\/board/);
-			await expect(page.locator('h2')).toContainText('Kanban Board');
+			await expect(page.getByRole('heading', { level: 2, name: 'Kanban Board' }).first()).toBeVisible();
 
 			// Dropdown should be closed after navigation
 			await expect(page.locator('.mobile-nav-dropdown')).not.toBeVisible();
@@ -167,9 +167,9 @@ test.describe('NavBar', () => {
 
 				// Verify heading
 				if (label === 'Settings') {
-					await expect(page.locator('h1')).toContainText(heading);
+					await expect(page.getByRole('heading', { level: 1, name: heading }).first()).toBeVisible();
 				} else {
-					await expect(page.locator('h2')).toContainText(heading);
+					await expect(page.getByRole('heading', { level: 2, name: heading }).first()).toBeVisible();
 				}
 
 				// Verify toggle shows new current page

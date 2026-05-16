@@ -58,6 +58,7 @@
 		class="fixed inset-0 z-50 flex items-center justify-center p-4"
 		style="background: rgba(0, 0, 0, 0.5);"
 		role="dialog"
+		tabindex="-1"
 		aria-modal="true"
 		aria-label="Help"
 		onclick={handleBackdropClick}

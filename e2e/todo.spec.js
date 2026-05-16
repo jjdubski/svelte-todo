@@ -76,15 +76,15 @@ test.describe('Todo App', () => {
 	test('Navigation', async ({ page }) => {
 		await page.locator('a.nav-link', { hasText: 'Board' }).click();
 		await expect(page).toHaveURL(/\/board/);
-		await expect(page.locator('h3', { hasText: 'Pending' })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 3, name: 'Pending' }).first()).toBeVisible();
 
 		await page.locator('a.nav-link', { hasText: 'Analytics' }).click();
 		await expect(page).toHaveURL(/\/stats/);
-		await expect(page.locator('h3', { hasText: 'Completion Rate' })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 3, name: 'Completion Rate' }).first()).toBeVisible();
 
 		await page.locator('a.nav-link', { hasText: 'Tasks' }).click();
 		await expect(page).toHaveURL(/\/tasks/);
-		await expect(page.locator('#title-input')).toBeVisible();
+		await expect(page.getByRole('textbox', { name: 'Task title' }).first()).toBeVisible();
 	});
 
 	test('Drag handles visible when sort is manual', async ({ page }) => {

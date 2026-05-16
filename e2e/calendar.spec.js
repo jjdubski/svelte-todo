@@ -163,7 +163,7 @@ test.describe('Calendar page', () => {
 
 		// Should navigate to /tasks
 		await page.waitForURL(/\/tasks/, { timeout: 5000 });
-		await expect(page.locator('#title-input')).toBeVisible({ timeout: 5000 });
+		await expect(page.getByRole('textbox', { name: 'Task title' }).first()).toBeVisible({ timeout: 5000 });
 	});
 
 	// ──────────────────────────────────────────────
