@@ -24,30 +24,31 @@ export default defineConfig({
 		sveltekit(),
 		VitePWA({
 			registerType: 'autoUpdate',
+			includeAssets: ['app-icon.svg', 'app-icon-192.png', 'app-icon-512.png', 'favicon.svg'],
 			manifest: {
 				name: 'Svelte Todo',
 				short_name: 'Todo',
 				description: 'A modern Todo application built with Svelte 5',
 				theme_color: '#3b82f6',
-				background_color: '#ffffff',
+				background_color: '#2563eb',
 				display: 'standalone',
 				icons: [
 					{
-						src: 'app-icon.svg',
+						src: 'app-icon-192.png',
 						sizes: '192x192',
-						type: 'image/svg+xml',
+						type: 'image/png',
 						purpose: 'any'
 					},
 					{
-						src: 'app-icon.svg',
+						src: 'app-icon-512.png',
 						sizes: '512x512',
-						type: 'image/svg+xml',
+						type: 'image/png',
 						purpose: 'any'
 					},
 					{
-						src: 'app-icon.svg',
+						src: 'app-icon-512.png',
 						sizes: '512x512',
-						type: 'image/svg+xml',
+						type: 'image/png',
 						purpose: 'maskable'
 					}
 				]
