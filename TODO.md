@@ -18,10 +18,6 @@
 - Calander page gets weird on certain screen sizes, it should always have 'Calendar View' title on top and the BackButton. If the Month selector can fit that't fine, if it cant force it to be in the row below (how it looks on mobile/small screens already)
 - Switching between pages causes a load in flash. Use a skeleton style where the layout stays
 - Mobile/smaller screen uneven select box
-- ~~Filter by category doesn't work, selecting tags does not work either~~ ✅ Fixed
-- ~~Search input accent color~~ ✅ Fixed
-- ~~Search tag:xxx not creating token~~ ✅ Fixed
-- ~~Keyboard shortcuts not added~~ ✅ Fixed (`/`, `n`, `e`, `a`, `?`, `Esc`, `Ctrl+F`)
-- ~~Help dialog now shows page-specific shortcuts~~ ✅ Fixed
-- ~~Multi-select instructions only on board/archived~~ ✅ Fixed
+- Filter by category doesn't work, selecting tags does not work either
+- Search tag:xxx not creating token
 - fix mobile web app navigation

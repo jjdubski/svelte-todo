@@ -73,6 +73,41 @@ test.describe('Todo App', () => {
 		await expect(page.locator('.todo-title')).toHaveCount(2);
 	});
 
+	test('Search stays editable and filters still work after selecting status', async ({ page }) => {
+		const titleInput = page.locator('#title-input');
+
+		await titleInput.fill('Buy groceries');
+		await page.locator('button[data-btn="primary"]', { hasText: 'Add Task' }).click();
+
+		await titleInput.fill('Read a book');
+		await page.locator('button[data-btn="primary"]', { hasText: 'Add Task' }).click();
+
+		const searchField = page.getByRole('searchbox', { name: /search/i });
+		await searchField.click();
+		await searchField.type('buy ');
+		await expect(searchField).toHaveValue('buy ');
+
+		const statusFilter = page.getByRole('combobox', { name: /filter by status/i });
+		await statusFilter.selectOption('active');
+
+		await expect(statusFilter).toHaveValue('active');
+		await expect(page.locator('.todo-title')).toHaveCount(2);
+
+		await searchField.click();
+		await searchField.press('End');
+		await searchField.type(' groceries');
+		await expect(searchField).toHaveValue(/buy\s+groceries$/);
+		await expect(page.locator('.todo-title')).toHaveCount(1);
+		await expect(page.locator('.todo-title')).toHaveText('Buy groceries');
+
+		const categoryWork = page.getByRole('button', { name: 'Work' }).first();
+		await categoryWork.click();
+		await expect(categoryWork).toHaveClass(/active/);
+
+		await categoryWork.click();
+		await expect(categoryWork).not.toHaveClass(/active/);
+	});
+
 	test('Navigation', async ({ page }) => {
 		await page.locator('a.nav-link', { hasText: 'Board' }).click();
 		await expect(page).toHaveURL(/\/board/);

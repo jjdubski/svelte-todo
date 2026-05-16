@@ -1,4 +1,4 @@
-import { createContext } from 'svelte';
+import { createContext, untrack } from 'svelte';
 import { SvelteSet, SvelteDate } from 'svelte/reactivity';
 import { storageGet, storageSet } from '$lib/scripts/storage.js';
 import {
@@ -123,6 +123,27 @@ function _normalizeSortTokenValue(value) {
 	return 'manual';
 }
 
+/**
+ * @param {Array<{key:string, value:string}>} left
+ * @param {Array<{key:string, value:string}>} right
+ * @returns {boolean}
+ */
+function _queryTokensEqual(left, right) {
+	if (left === right) return true;
+	if (!Array.isArray(left) || !Array.isArray(right)) return false;
+	if (left.length !== right.length) return false;
+
+	for (let i = 0; i < left.length; i++) {
+		const l = left[i];
+		const r = right[i];
+		if (!l || !r || l.key !== r.key || l.value !== r.value) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 class TodoStore {
 	/** @type {boolean} */
 	isLoading = $state(true);
@@ -236,6 +257,7 @@ class TodoStore {
 	filterDueKeyword = $state('');
 	queryTokens = $state([]);
 	queryPlainText = $state('');
+	_queryPlainTextBuffer = '';
 	_isSyncingFilterText = false;
 	_isApplyingQueryTokens = false;
 	activeFilterCount = $state(0);
@@ -378,18 +400,25 @@ class TodoStore {
 			storageSet('tagColors', tc);
 		});
 
+		// Effect: parse search query text into tokens/plain text
+		$effect(() => {
+			const ft = this.filterText;
+
+			if (this._isSyncingFilterText) return;
+
+			const parsed = parseQuery(ft);
+			this.queryTokens = parsed.tokens;
+			this.queryPlainText = parsed.plainText;
+			this._queryPlainTextBuffer = parsed.plainText;
+
+			untrack(() => {
+				this._applyQueryTokens(parsed.tokens);
+			});
+		});
+
 		// Effect: recompute filteredTodos when filters/sort change
 		$effect(() => {
 			const todos = this.todos;
-			const ft = this.filterText;
-
-			if (!this._isSyncingFilterText) {
-				const parsed = parseQuery(ft);
-				this.queryTokens = parsed.tokens;
-				this.queryPlainText = parsed.plainText;
-				this._applyQueryTokens(parsed.tokens);
-			}
-
 			const textQuery = this.queryPlainText;
 			const fs = this.filterStatus;
 			const fc = this.filterCategory;
@@ -398,8 +427,9 @@ class TodoStore {
 			const ftags = this.filterTags;
 			const fdf = this.filterDateFrom;
 			const fdt = this.filterDateTo;
+			const dueKeyword = this.filterDueKeyword;
 
-			this.filteredTodos = this._computeFiltered(todos, textQuery, fs, fc, sb, fp, ftags, fdf, fdt);
+			this.filteredTodos = this._computeFiltered(todos, textQuery, fs, fc, sb, fp, ftags, fdf, fdt, dueKeyword);
 
 			// Compute active filter count
 			let count = 0;
@@ -426,12 +456,22 @@ class TodoStore {
 			const fdf = this.filterDateFrom;
 			const fdt = this.filterDateTo;
 			const dueKeyword = this.filterDueKeyword;
-			const plainText = this.queryPlainText;
+			const plainText = this._queryPlainTextBuffer;
 
 			const nextTokens = this._buildQueryTokensFromFilters(fs, fc, sb, fp, ftags, fdf, fdt, dueKeyword);
 			const nextFilterText = stringifyQuery(nextTokens, plainText);
+			const currentParsed = parseQuery(this.filterText);
+			const filterTextAlreadyInSync =
+				_queryTokensEqual(currentParsed.tokens, nextTokens) && currentParsed.plainText === plainText;
 
-			this.queryTokens = nextTokens;
+			if (!_queryTokensEqual(this.queryTokens, nextTokens)) {
+				this.queryTokens = nextTokens;
+			}
+
+			if (filterTextAlreadyInSync) {
+				return;
+			}
+
 			if (nextFilterText !== this.filterText) {
 				this._isSyncingFilterText = true;
 				this.filterText = nextFilterText;

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SvelteSet } from 'svelte/reactivity';
 import { TodoStore } from '../state/todoStore.svelte.js';
+import { stringifyQuery } from '../utils/queryParser.js';
 import {
 	fuzzyMatch,
 	computeStats,
@@ -1147,6 +1148,29 @@ describe('query token synchronization', () => {
 
 	afterEach(() => {
 		vi.unstubAllGlobals();
+	});
+
+	it('preserves plain-text buffer when adding a status token', () => {
+		store._queryPlainTextBuffer = 'buy';
+		const tokens = store._buildQueryTokensFromFilters('active', '', 'manual', 'all', [], '', '', '');
+
+		expect(stringifyQuery(tokens, store._queryPlainTextBuffer)).toBe('is:active buy');
+	});
+
+	it('preserves plain-text buffer when status token is removed', () => {
+		store._queryPlainTextBuffer = 'buy';
+		const tokens = store._buildQueryTokensFromFilters('all', '', 'manual', 'all', [], '', '', '');
+
+		expect(stringifyQuery(tokens, store._queryPlainTextBuffer)).toBe('buy');
+	});
+
+	it('preserves plain-text buffer while toggling tag tokens', () => {
+		store._queryPlainTextBuffer = 'report';
+		const withTag = store._buildQueryTokensFromFilters('all', '', 'manual', 'all', ['urgent'], '', '', '');
+		expect(stringifyQuery(withTag, store._queryPlainTextBuffer)).toBe('tag:urgent report');
+
+		const withoutTag = store._buildQueryTokensFromFilters('all', '', 'manual', 'all', [], '', '', '');
+		expect(stringifyQuery(withoutTag, store._queryPlainTextBuffer)).toBe('report');
 	});
 
 	it('does not reassign filterTags when parsed tags are unchanged', () => {
