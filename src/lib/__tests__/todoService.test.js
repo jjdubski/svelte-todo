@@ -98,7 +98,7 @@ describe('todoService', () => {
 			const newUser = createMockUser({ todos: [] });
 			mockCreate.mockResolvedValue(newUser);
 
-			const result = await getUserData('new-user');
+			await getUserData('new-user');
 
 			expect(mockCreate).toHaveBeenCalledWith({ authUserId: 'new-user' });
 			expect(newUser.save).toHaveBeenCalled();

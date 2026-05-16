@@ -42,6 +42,7 @@
 
 			<!-- Sign in with Google -->
 			<button
+				type="button"
 				onclick={() => auth.login('google')}
 				class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:shadow-md"
 				style="background: #ffffff; border-color: #dadce0; color: #1f2937;"
@@ -71,6 +72,7 @@
 			<!-- Sign in with Apple (only shown when configured) -->
 			{#if appleEnabled}
 				<button
+					type="button"
 					onclick={() => auth.login('apple')}
 					class="mt-3 flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium text-white transition-all hover:shadow-md"
 					style="background: #000000; border-color: #000000;"
@@ -94,6 +96,7 @@
 
 			<!-- Continue as Guest -->
 			<button
+				type="button"
 				onclick={() => auth.continueAsGuest()}
 				class="w-full cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium transition-all hover:opacity-80"
 				style="background: var(--input-bg); color: var(--text);"

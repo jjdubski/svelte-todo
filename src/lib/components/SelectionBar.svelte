@@ -19,6 +19,7 @@
 			</span>
 			{#each actions as action (action.label)}
 				<button
+					type="button"
 					onclick={action.onClick}
 					class="cursor-pointer rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white"
 					style="background: {action.style};"
@@ -27,6 +28,7 @@
 				</button>
 			{/each}
 			<button
+				type="button"
 				onclick={onCancel}
 				class="cursor-pointer rounded-lg border-none px-3 py-1.5 text-xs font-semibold"
 				style="background: var(--input-bg); color: var(--text-heading);"

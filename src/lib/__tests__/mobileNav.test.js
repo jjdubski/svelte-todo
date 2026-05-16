@@ -123,7 +123,7 @@ describe('NavBar — currentPageLabel', () => {
 
 describe('NavBar — mobileMenuOpen state machine', () => {
 	it('starts closed (false)', () => {
-		let mobileMenuOpen = false;
+		const mobileMenuOpen = false;
 		expect(mobileMenuOpen).toBe(false);
 	});
 

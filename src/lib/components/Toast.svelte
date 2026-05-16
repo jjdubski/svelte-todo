@@ -30,6 +30,7 @@
 		<span class="flex-1 text-sm sm:text-base" style="color: var(--text);">{store.toast.message}</span>
 		{#if store.toast.type === 'info' && (store.lastArchivedTodos.length > 0 || store.lastCompletedTodos.length > 0 || store.lastMovedTodos.length > 0)}
 			<button
+				type="button"
 				class="flex cursor-pointer items-center gap-1 rounded-md border-none px-2 py-1 text-xs font-medium"
 				style="background: var(--btn-primary); color: white;"
 				onclick={() => {

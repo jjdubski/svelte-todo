@@ -6,7 +6,7 @@
 	import TodoEditModal from '$lib/components/TodoEditModal.svelte';
 	import { Check, Clock, Archive } from 'lucide-svelte';
 	import { localDateStr } from '$lib/utils/todoUtils.js';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteSet, SvelteDate } from 'svelte/reactivity';
 	import { lightTap } from '$lib/utils/haptics.js';
 
 	const store = getTodoStore();
@@ -55,7 +55,7 @@
 	let dropTargetCardId = $state(null);
 	/** Track drop position relative to the hovered card ('before' or 'after') */
 	let dropIndicatorPos = $state(null);
-	let { lastClickedId: initialLastClickedId } = initSelection();
+	const { lastClickedId: initialLastClickedId } = initSelection();
 	let lastClickedId = $state(initialLastClickedId);
 
 	function handleCardClick(e, todo) {
@@ -132,9 +132,9 @@
 	function formatDate(dateStr) {
 		if (!dateStr) return '';
 		const date = new Date(dateStr + 'T00:00:00');
-		const today = new Date();
+		const today = new SvelteDate();
 		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
+		const tomorrow = new SvelteDate(today);
 		tomorrow.setDate(tomorrow.getDate() + 1);
 		if (date.getTime() === today.getTime()) return 'Today';
 		if (date.getTime() === tomorrow.getTime()) return 'Tomorrow';
@@ -303,7 +303,7 @@
 									}
 								}
 							}}
-							ondragleave={(e) => {
+							ondragleave={() => {
 								if (dropTargetCardId === todo.id) {
 									dropTargetCardId = null;
 									dropIndicatorPos = null;
@@ -384,6 +384,7 @@
 
 							<div class="flex items-center self-stretch">
 								<button
+									type="button"
 									onclick={() => {
 										store.deleteTodo(todo.id);
 										lightTap();

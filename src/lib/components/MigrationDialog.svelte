@@ -112,6 +112,7 @@
 
 			<div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
 				<button
+					type="button"
 					onclick={handleStartFresh}
 					disabled={isSyncing}
 					class="cursor-pointer rounded-lg border px-4 py-2 text-sm font-medium transition-all hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
@@ -120,6 +121,7 @@
 					Start fresh
 				</button>
 				<button
+					type="button"
 					onclick={handleSync}
 					disabled={isSyncing}
 					class="flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"

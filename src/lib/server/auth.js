@@ -47,7 +47,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		 * @param {{ token: AuthJWT, account: import('@auth/core/types').Account | null, profile?: import('@auth/core/types').Profile }} params
 		 * @returns {Promise<AuthJWT>}
 		 */
-		async jwt({ token, account, profile }) {
+		async jwt({ token, account }) {
 			if (account) {
 				token.authUserId = account.providerAccountId;
 				token.provider = account.provider;

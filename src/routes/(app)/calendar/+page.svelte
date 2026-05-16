@@ -55,6 +55,7 @@
 	<h2 class="m-0 text-xl font-semibold sm:text-2xl" style="color: var(--text-heading);">Calendar View</h2>
 	<div class="order-last flex w-full flex-1 items-center justify-center gap-2 sm:order-none sm:w-auto sm:gap-4">
 		<button
+			type="button"
 			class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
 			style="color: var(--text-muted);"
 			onclick={prevMonth}
@@ -69,6 +70,7 @@
 			{currentYearNum}
 		</h3>
 		<button
+			type="button"
 			class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
 			style="color: var(--text-muted);"
 			onclick={nextMonth}

@@ -83,6 +83,7 @@
 		</div>
 		<div class="flex items-center gap-2">
 			<button
+				type="button"
 				class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-3 py-1.5 text-sm font-semibold text-white"
 				style="background: var(--btn-primary);"
 				data-btn="primary"
@@ -91,6 +92,7 @@
 				Install
 			</button>
 			<button
+				type="button"
 				class="flex cursor-pointer items-center justify-center rounded-lg border-none p-1.5"
 				style="background: transparent; color: var(--text-muted);"
 				onclick={handleDismiss}

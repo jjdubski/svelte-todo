@@ -72,6 +72,7 @@
 	</select>
 	{#if store.activeFilterCount > 0}
 		<button
+			type="button"
 			class="glow-btn flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border"
 			style="background: var(--btn-delete); border-color: var(--btn-delete); color: white;"
 			data-btn="delete"
@@ -84,6 +85,7 @@
 	{/if}
 	<div class="relative">
 		<button
+			type="button"
 			class="glow-btn flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border"
 			style="background: var(--input-bg); border-color: var(--border); color: var(--text-muted);"
 			data-btn="ghost"
@@ -104,6 +106,7 @@
 				transition:slide={{ duration: store.prefersReducedMotion ? 0 : 150 }}
 			>
 				<button
+					type="button"
 					class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-2.5 py-2 text-xs font-medium sm:text-sm"
 					style="background: var(--btn-save); color: white;"
 					data-btn="save"
@@ -116,6 +119,7 @@
 					<CheckSquare size={14} /> Complete
 				</button>
 				<button
+					type="button"
 					class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-2.5 py-2 text-xs font-medium sm:text-sm"
 					style="background: var(--btn-delete); color: white;"
 					data-btn="delete"
@@ -128,6 +132,7 @@
 					<Archive size={14} /> Archive
 				</button>
 				<button
+					type="button"
 					class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-2.5 py-2 text-xs font-medium sm:text-sm"
 					style="background: var(--btn-cancel); color: white;"
 					data-btn="cancel"
@@ -146,6 +151,7 @@
 <!-- Date Range Filter (collapsible) -->
 <div class="mb-3">
 	<button
+		type="button"
 		class="glow-btn flex cursor-pointer items-center gap-1.5 rounded-lg border-none px-3 py-1.5 text-xs font-medium sm:text-sm"
 		style="color: var(--text-muted);"
 		data-btn="ghost"
@@ -182,6 +188,7 @@
 			/>
 			{#if store.filterDateFrom || store.filterDateTo}
 				<button
+					type="button"
 					class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-2 py-1 text-xs font-medium sm:text-sm"
 					style="color: var(--btn-delete);"
 					data-btn="ghost"
@@ -204,6 +211,7 @@
 	style="background: var(--todo-bg); border-color: var(--border); transition: background 0.3s, border-color 0.3s;"
 >
 	<button
+		type="button"
 		class="glow-btn cursor-pointer rounded-full border-transparent px-3 py-1.5 text-sm font-medium sm:text-base"
 		style="color: var(--text-secondary);"
 		data-btn="ghost"
@@ -212,6 +220,7 @@
 	>
 	{#each store.categories as cat (cat)}
 		<button
+			type="button"
 			class="glow-btn cursor-pointer rounded-full border-transparent px-3 py-1.5 text-sm font-medium sm:text-base"
 			style="color: var(--text-secondary); --cat-color: {store.categoryColors[cat]};"
 			data-btn="ghost"
@@ -261,6 +270,7 @@
 		{/each}
 		{#if store.filterTags.length > 0}
 			<button
+				type="button"
 				class="glow-btn cursor-pointer rounded-full border-none px-2 py-1 text-xs font-medium sm:text-sm"
 				style="color: var(--text-muted);"
 				data-btn="ghost"

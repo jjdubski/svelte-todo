@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/stores';
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
-	import { getFormState, createFormState } from '$lib/state/formState.svelte.js';
+	import { createFormState } from '$lib/state/formState.svelte.js';
 	import TodoHeader from '$lib/components/TodoHeader.svelte';
 	import TodoForm from '$lib/components/TodoForm.svelte';
 	import TodoFilters from '$lib/components/TodoFilters.svelte';
@@ -120,6 +120,7 @@
 	>
 		<span class="flex-1">Enable notifications for due date reminders</span>
 		<button
+			type="button"
 			class="glow-btn cursor-pointer rounded-md border-none px-3 py-1.5 text-xs font-semibold text-white sm:text-sm"
 			style="background: var(--btn-primary);"
 			onclick={() => store.requestNotificationPermission()}
@@ -127,6 +128,7 @@
 			Enable
 		</button>
 		<button
+			type="button"
 			class="flex cursor-pointer items-center justify-center rounded border-none p-1 text-sm leading-none sm:text-base"
 			style="color: var(--text-muted); background: transparent;"
 			onclick={() => (store.requestedNotification = true)}

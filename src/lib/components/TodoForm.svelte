@@ -99,6 +99,7 @@
 		>
 			{#each store.templates as template (template.name)}
 				<button
+					type="button"
 					class="glow-btn template-btn flex-1 cursor-pointer rounded-lg border-none px-3 py-2 text-sm font-medium sm:text-base"
 					class:active={formStore.selectedTemplate === template.name}
 					onclick={() => handleTemplate(template)}
@@ -247,6 +248,7 @@
 	</div>
 {:else}
 	<button
+		type="button"
 		class="glow-btn mb-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4"
 		style="border-color: var(--border); color: var(--text-muted);"
 		data-btn="ghost"
@@ -258,6 +260,7 @@
 
 <!-- Toggle form visibility -->
 <button
+	type="button"
 	class="glow-btn mb-3 flex w-full cursor-pointer items-center justify-center rounded-md border-none py-2"
 	style="background: transparent; color: var(--text-muted);"
 	data-btn="ghost"

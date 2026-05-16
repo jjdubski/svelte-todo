@@ -1,9 +1,10 @@
 <script>
 	import { slide } from 'svelte/transition';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { Edit2, Archive, X, ChevronDown, ChevronRight, Repeat, CheckSquare, Square } from 'lucide-svelte';
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import { renderMarkdown } from '$lib/scripts/markdown.js';
-	import { format, localDateStr } from '$lib/utils/todoUtils.js';
+	import { localDateStr } from '$lib/utils/todoUtils.js';
 	import { lightTap } from '$lib/utils/haptics.js';
 
 	/** @type {import('./state/todoStore.svelte.js').Todo} */
@@ -28,9 +29,9 @@
 		if (!dateStr) return '';
 		// Parse as local timezone by appending T00:00:00 to avoid UTC shift issues
 		const date = new Date(dateStr + 'T00:00:00');
-		const today = new Date();
+		const today = new SvelteDate();
 		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
+		const tomorrow = new SvelteDate(today);
 		tomorrow.setDate(tomorrow.getDate() + 1);
 
 		if (date.getTime() === today.getTime()) return 'Today';
@@ -83,6 +84,7 @@
 >
 	{#if store.selectMode}
 		<button
+			type="button"
 			class="select-check mt-0.5 flex shrink-0 cursor-pointer items-center justify-center self-start rounded border-none bg-none p-0.5"
 			onclick={() => store.toggleSelect(todo.id)}
 			aria-label={store.selectedTodos.has(todo.id) ? 'Deselect' : 'Select'}
@@ -173,6 +175,7 @@
 				<div class="flex flex-wrap items-center gap-2">
 					{#if totalSubtasks > 0}
 						<button
+							type="button"
 							class="subtasks-preview inline-flex cursor-pointer items-center gap-0.5 border-none bg-none p-0.5 text-sm sm:text-base"
 							onclick={toggleSubtasksView}
 						>
@@ -185,6 +188,7 @@
 						</button>
 					{/if}
 					<button
+						type="button"
 						class="inline-flex cursor-pointer items-center gap-0.5 border-none bg-none p-0.5 text-sm sm:text-base"
 						style="color: var(--text-muted);"
 						onclick={() => (showAddSubtask = !showAddSubtask)}
@@ -201,6 +205,7 @@
 							</span>
 						{/if}
 						<button
+							type="button"
 							onclick={() => store.startEdit(todo.id)}
 							class="glow-btn flex cursor-pointer items-center justify-center rounded-md border-0 p-1"
 							style="color: var(--text-muted);"
@@ -209,6 +214,7 @@
 							<Edit2 size={16} />
 						</button>
 						<button
+							type="button"
 							onclick={() => {
 								store.deleteTodo(todo.id);
 								lightTap();
@@ -268,11 +274,13 @@
 							aria-label="New subtask text"
 						/>
 						<button
+							type="button"
 							class="cursor-pointer rounded-md border-none px-2 py-1 text-sm font-medium text-white sm:text-base"
 							style="background: var(--btn-save);"
 							onclick={addInlineSubtask}>Add</button
 						>
 						<button
+							type="button"
 							class="cursor-pointer rounded-md border-none px-2 py-1 text-xs font-medium text-white sm:text-sm"
 							style="background: var(--btn-cancel);"
 							onclick={() => {

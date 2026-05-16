@@ -4,6 +4,7 @@
 	import { materialEasing } from '$lib/utils/motion.js';
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import { page } from '$app/stores';
+	import { resolve } from '$app/paths';
 
 	const store = getTodoStore();
 
@@ -87,6 +88,7 @@
 
 <!-- Floating help button -->
 <button
+	type="button"
 	class="glow-btn fixed right-4 bottom-4 z-40 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-0 shadow-lg"
 	style="background: rgba(37, 99, 235, 0.85); color: white; box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);"
 	data-btn="primary"
@@ -119,6 +121,7 @@
 			<div class="mb-5 flex items-center justify-between">
 				<h2 class="m-0 text-lg font-semibold sm:text-xl" style="color: var(--text-heading);">Help</h2>
 				<button
+					type="button"
 					class="flex cursor-pointer items-center justify-center rounded-lg border-none p-1.5"
 					style="background: transparent; color: var(--text-muted);"
 					onclick={closeHelp}
@@ -206,7 +209,7 @@
 			<!-- Settings link -->
 			<div>
 				<a
-					href="/settings"
+					href={resolve('/settings')}
 					class="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium no-underline transition-all hover:opacity-80 sm:text-base"
 					style="background: var(--input-bg); border-color: var(--border); color: var(--btn-primary);"
 					onclick={closeHelp}

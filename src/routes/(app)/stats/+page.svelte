@@ -1,6 +1,8 @@
 <script>
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
-	import { BarChart3, PieChart, List, AlertTriangle, Flame, ArrowLeft, Target } from 'lucide-svelte';
+	import { resolve } from '$app/paths';
+	import { BarChart3, PieChart, List, AlertTriangle, Flame, Target } from 'lucide-svelte';
+	import BackButton from '$lib/components/BackButton.svelte';
 
 	const store = getTodoStore();
 
@@ -32,13 +34,7 @@
 
 <div class="mb-4 flex items-center justify-between gap-2">
 	<h2 class="m-0 text-xl font-semibold sm:text-2xl" style="color: var(--text-heading);">Analytics</h2>
-	<a
-		href="/tasks"
-		class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium no-underline transition-all hover:opacity-80 sm:text-base"
-		style="color: var(--btn-primary); background: var(--input-bg);"
-	>
-		<ArrowLeft size={14} /> Back to Tasks
-	</a>
+	<BackButton href={resolve('/')} label="Back to Tasks" />
 </div>
 
 <!-- Analytics Grid -->
@@ -310,7 +306,7 @@
 			{:else}
 				{#each store.overdueTasks as todo (todo.id)}
 					<a
-						href="/tasks"
+						href={resolve('/tasks')}
 						class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm no-underline transition-colors"
 						style="background: rgba(239, 68, 68, 0.08); color: var(--priority-high);"
 					>

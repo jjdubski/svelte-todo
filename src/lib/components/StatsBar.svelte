@@ -4,9 +4,9 @@
 
 	const store = getTodoStore();
 
-	let activeSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
-	let completedSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
-	let overdueSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
+	const activeSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
+	const completedSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
+	const overdueSpring = spring(0, { stiffness: 0.15, damping: 0.85 });
 
 	// Snap to the first real value on mount, then animate subsequent updates.
 	let _activeInit = false;

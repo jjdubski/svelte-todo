@@ -1,5 +1,6 @@
 <script>
 	import { getAuthStore } from '$lib/state/authStore.svelte.js';
+	import { resolve } from '$app/paths';
 
 	const auth = getAuthStore();
 	let showMenu = $state(false);
@@ -25,6 +26,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="relative" onblur={handleBlur}>
 		<button
+			type="button"
 			onclick={toggleMenu}
 			class="flex cursor-pointer items-center gap-2 rounded-full border-none bg-transparent p-0.5"
 			aria-label="User menu"
@@ -54,6 +56,7 @@
 				onclick={() => (showMenu = false)}
 			>
 				<button
+					type="button"
 					onclick={handleSignOut}
 					class="w-full cursor-pointer border-none bg-transparent px-4 py-2 text-left text-xs"
 					style="color: var(--text);"
@@ -65,7 +68,7 @@
 	</div>
 {:else if auth.isGuest}
 	<a
-		href="/"
+		href={resolve('/')}
 		class="rounded-lg px-3 py-1.5 text-xs font-medium no-underline transition-all sm:text-base"
 		style="background: var(--btn-primary); color: white;"
 	>

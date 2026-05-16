@@ -1,6 +1,7 @@
 <script>
 	import { fade, slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { materialEasing } from '$lib/utils/motion.js';
 	import {
 		Layers,
@@ -29,7 +30,7 @@
 	}
 	let todayStr = $derived(_localDateStr());
 	let tomorrowStr = $derived.by(() => {
-		const d = new Date();
+		const d = new SvelteDate();
 		d.setDate(d.getDate() + 1);
 		return _localDateStr(d);
 	});
@@ -68,6 +69,7 @@
 				</h3>
 				<p class="m-0 mb-6 text-sm sm:text-base" style="color: var(--text-muted);">Add a task to get started</p>
 				<button
+					type="button"
 					class="glow-btn flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-none px-4 py-3.5 text-sm font-semibold sm:text-base"
 					style="background: var(--btn-primary); color: white; max-width: 280px;"
 					data-btn="primary"
@@ -91,6 +93,7 @@
 				</p>
 				{#if store.activeFilterCount > 0}
 					<button
+						type="button"
 						class="glow-btn flex cursor-pointer items-center gap-1.5 rounded-xl border-none px-4 py-2.5 text-sm font-semibold"
 						style="background: var(--btn-cancel); color: white;"
 						data-btn="cancel"
@@ -114,6 +117,7 @@
 					Try different keywords or check your spelling
 				</p>
 				<button
+					type="button"
 					class="glow-btn flex cursor-pointer items-center gap-1.5 rounded-xl border-none px-4 py-2.5 text-sm font-semibold"
 					style="background: var(--btn-cancel); color: white;"
 					data-btn="cancel"
@@ -139,6 +143,7 @@
 					{/if}
 				</p>
 				<button
+					type="button"
 					class="glow-btn flex cursor-pointer items-center gap-1.5 rounded-xl border-none px-4 py-2.5 text-sm font-semibold"
 					style="background: var(--btn-cancel); color: white;"
 					data-btn="cancel"
@@ -158,6 +163,7 @@
 				}}
 			>
 				<button
+					type="button"
 					class="upcoming-toggle flex w-full cursor-pointer items-center gap-2 border-none bg-none p-0 text-sm font-semibold sm:text-base"
 					style="color: var(--text-heading);"
 					onclick={() => (showUpcoming = !showUpcoming)}

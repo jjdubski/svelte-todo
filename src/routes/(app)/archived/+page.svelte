@@ -42,6 +42,7 @@
 <div class="mb-4 flex items-center justify-between">
 	<span class="text-sm sm:text-base" style="color: var(--text-muted);">{store.archivedTodos.length} archived</span>
 	<button
+		type="button"
 		class="glow-btn flex h-9 cursor-pointer items-center gap-1 rounded-lg border-none px-3 py-1.5 text-xs font-semibold sm:text-sm"
 		style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted);"
 		class:active={store.archivedSelectMode}
@@ -73,6 +74,7 @@
 			>
 				{#if store.archivedSelectMode}
 					<button
+						type="button"
 						class="flex shrink-0 cursor-pointer items-center justify-center self-start rounded border-none bg-none p-0.5"
 						style="color: var(--text-muted);"
 						onclick={() => store.toggleArchivedSelect(todo.id)}
@@ -139,6 +141,7 @@
 				{#if !store.archivedSelectMode}
 					<div class="flex shrink-0 flex-col justify-around">
 						<button
+							type="button"
 							class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white sm:text-sm"
 							style="background: var(--btn-save);"
 							data-btn="save"
@@ -150,6 +153,7 @@
 							<RotateCcw size={12} /> Restore
 						</button>
 						<button
+							type="button"
 							class="glow-btn flex cursor-pointer items-center gap-1 rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white sm:text-sm"
 							style="background: var(--btn-delete);"
 							data-btn="delete"

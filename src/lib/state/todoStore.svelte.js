@@ -1,5 +1,5 @@
 import { createContext } from 'svelte';
-import { SvelteSet } from 'svelte/reactivity';
+import { SvelteSet, SvelteDate } from 'svelte/reactivity';
 import { storageGet, storageSet } from '$lib/scripts/storage.js';
 import {
 	localDateStr,
@@ -11,8 +11,7 @@ import {
 	computeCategoryBreakdown,
 	computeOverdueTasks,
 	computeUpcomingDue,
-	getNextDueDate,
-	getRandomTagColor
+	getNextDueDate
 } from '$lib/utils/todoUtils.js';
 import { lightTap } from '$lib/utils/haptics.js';
 import { parseQuery, stringifyQuery } from '$lib/utils/queryParser.js';
@@ -55,7 +54,7 @@ function _generateId() {
  * @returns {Todo[]}
  */
 function _dedupTodos(todos) {
-	const seen = new Set();
+	const seen = new SvelteSet();
 	return todos.filter((t) => {
 		if (seen.has(t.id)) return false;
 		seen.add(t.id);
@@ -723,7 +722,7 @@ class TodoStore {
 				if (!a.dueDate && !b.dueDate) return 0;
 				if (!a.dueDate) return 1;
 				if (!b.dueDate) return -1;
-				return new Date(a.dueDate) - new Date(b.dueDate);
+				return new SvelteDate(a.dueDate) - new SvelteDate(b.dueDate);
 			});
 		} else if (sb === 'alpha-asc') {
 			result = [...result].sort((a, b) => a.title.localeCompare(b.title));
@@ -1211,7 +1210,7 @@ class TodoStore {
 			recurring,
 			subtasks: subtasks?.filter((s) => s.text.trim()) || [],
 			completed: false,
-			createdAt: new Date().toISOString()
+			createdAt: new SvelteDate().toISOString()
 		};
 		this.todos.push(todo);
 		this._syncCreate(todo);
@@ -1351,7 +1350,7 @@ class TodoStore {
 			todo.completed = !todo.completed;
 			// Track completion timestamp for analytics
 			if (todo.completed) {
-				todo.completedAt = new Date().toISOString();
+				todo.completedAt = new SvelteDate().toISOString();
 			} else {
 				delete todo.completedAt;
 			}
@@ -1473,7 +1472,7 @@ class TodoStore {
 			recurring: todo.recurring,
 			subtasks: todo.subtasks || [],
 			completed: false,
-			createdAt: new Date().toISOString()
+			createdAt: new SvelteDate().toISOString()
 		};
 	}
 
@@ -1483,7 +1482,7 @@ class TodoStore {
 		this.lastCompletedTodos = this.todos.filter((t) => this.selectedTodos.has(t.id));
 		// Mark selected todos as completed
 		this.todos = this.todos.map((t) =>
-			this.selectedTodos.has(t.id) ? { ...t, completed: true, completedAt: new Date().toISOString() } : t
+			this.selectedTodos.has(t.id) ? { ...t, completed: true, completedAt: new SvelteDate().toISOString() } : t
 		);
 		// Create recurring copies for any recurring tasks that were just completed
 		// (skip already-completed todos so double-clicking doesn't spawn duplicates)
@@ -1503,7 +1502,7 @@ class TodoStore {
 		this.selectedTodos = new SvelteSet();
 		this.selectMode = false;
 		for (const id of ids) {
-			this._syncUpdate(id, { completed: true, completedAt: new Date().toISOString() });
+			this._syncUpdate(id, { completed: true, completedAt: new SvelteDate().toISOString() });
 		}
 	}
 
@@ -1896,7 +1895,7 @@ class TodoStore {
 				archivedTodos: this.archivedTodos,
 				customTags: this.customTags,
 				tagColors: this.tagColors,
-				exportedAt: new Date().toISOString()
+				exportedAt: new SvelteDate().toISOString()
 			},
 			null,
 			2
