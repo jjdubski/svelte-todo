@@ -433,6 +433,47 @@ class ThemeStore {
 		root.style.setProperty('--theme-accent-hover', shiftHex(accent, -22));
 		root.style.setProperty('--theme-accent-hover-dark', shiftHex(accent, 22));
 		root.style.setProperty('--app-font-family', FONT_FAMILIES[font] || FONT_FAMILIES['system-ui']);
+
+		this._updateFavicon(accent);
+		this._updateAppleTouchIcon(accent);
+		this._updateThemeColor(lightBg, darkBg);
+	}
+
+	_generateFaviconSvg(accent) {
+		return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+	<rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="${accent}"/>
+	<path d="M140 270l70 70 160-160" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+	}
+
+	_generateAppIconSvg(accent) {
+		return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+	<rect x="0" y="0" width="512" height="512" rx="96" ry="96" fill="${accent}"/>
+	<path d="M150 260l70 70 150-150" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+	}
+
+	_updateFavicon(accent) {
+		const link = document.querySelector('link[rel="icon"]');
+		if (!link) return;
+		const svg = this._generateFaviconSvg(accent);
+		link.href = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+	}
+
+	_updateAppleTouchIcon(accent) {
+		const svg = this._generateAppIconSvg(accent);
+		const dataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+		for (const size of ['192', '512']) {
+			const link = document.querySelector(`link[rel="apple-touch-icon"][sizes="${size}x${size}"]`);
+			if (link) link.href = dataUri;
+		}
+	}
+
+	_updateThemeColor(lightBg, darkBg) {
+		const lightMeta = document.querySelector('meta[name="theme-color"][media="(prefers-color-scheme: light)"]');
+		const darkMeta = document.querySelector('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]');
+		if (lightMeta) lightMeta.content = lightBg;
+		if (darkMeta) darkMeta.content = darkBg;
 	}
 
 	/**
