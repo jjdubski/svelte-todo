@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { batchRestore } from '$lib/server/todoService.js';
+import { resolveEffectiveAuthUserId } from '$lib/server/profileService.js';
 
 /**
  * POST /api/todos/restore — Batch restore archived todos.
@@ -9,8 +10,8 @@ import { batchRestore } from '$lib/server/todoService.js';
  */
 export async function POST(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
@@ -21,7 +22,7 @@ export async function POST(event) {
 			return error(400, 'ids must be a non-empty array');
 		}
 
-		const restored = await batchRestore(session.user.authUserId, ids);
+		const restored = await batchRestore(authUserId, ids);
 		return json({ restored });
 	} catch (err) {
 		console.error('[api] POST /api/todos/restore failed:', err);

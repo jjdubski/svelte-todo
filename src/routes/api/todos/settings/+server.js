@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { getSettings, updateSettings } from '$lib/server/todoService.js';
+import { resolveEffectiveAuthUserId } from '$lib/server/profileService.js';
 
 /**
  * GET /api/todos/settings — Fetch user settings payload.
@@ -9,12 +10,12 @@ import { getSettings, updateSettings } from '$lib/server/todoService.js';
  */
 export async function GET(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
-		const settings = await getSettings(session.user.authUserId);
+		const settings = await getSettings(authUserId);
 		return json({ settings });
 	} catch (err) {
 		console.error('[api] GET /api/todos/settings failed:', err);
@@ -30,8 +31,8 @@ export async function GET(event) {
  */
 export async function PATCH(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
@@ -40,7 +41,7 @@ export async function PATCH(event) {
 			return error(400, 'settings must be an object');
 		}
 
-		await updateSettings(session.user.authUserId, settings);
+		await updateSettings(authUserId, settings);
 		return json({ success: true });
 	} catch (err) {
 		console.error('[api] PATCH /api/todos/settings failed:', err);

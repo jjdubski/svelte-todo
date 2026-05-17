@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { getTodos, createTodo } from '$lib/server/todoService.js';
+import { resolveEffectiveAuthUserId } from '$lib/server/profileService.js';
 
 /**
  * GET /api/todos — Fetch all user data (todos, archived, settings).
@@ -9,12 +10,12 @@ import { getTodos, createTodo } from '$lib/server/todoService.js';
  */
 export async function GET(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
-		const data = await getTodos(session.user.authUserId);
+		const data = await getTodos(authUserId);
 		return json(data);
 	} catch (err) {
 		console.error('[api] GET /api/todos failed:', err);
@@ -30,13 +31,13 @@ export async function GET(event) {
  */
 export async function POST(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
 		const body = await event.request.json();
-		const todo = await createTodo(session.user.authUserId, body);
+		const todo = await createTodo(authUserId, body);
 		return json(todo, { status: 201 });
 	} catch (err) {
 		console.error('[api] POST /api/todos failed:', err);

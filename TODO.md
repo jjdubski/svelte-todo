@@ -5,3 +5,5 @@
 - Console issues:s
   - Multiple form field elements in the same form have the same id attribute value. This might prevent the browser from correctly autofilling the form.
     To fix this issue, use unique id attribute values for each form field.
+- Fix bug:
+  - User logs in to google account, signs out and switches to guest, then logs back in: The prompt to sync data appears (even though there was no new data) and everything gets duplicated if I click 'Sync' button.

@@ -1,11 +1,12 @@
 <script>
 	import '../app.css';
-	import { beforeNavigate } from '$app/navigation';
+	import { beforeNavigate, goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { fade } from 'svelte/transition';
 	import { createTodoStore } from '$lib/state/todoStore.svelte.js';
 	import { createAuthStore } from '$lib/state/authStore.svelte.js';
 	import { createThemeStore } from '$lib/state/themeStore.svelte.js';
-	import { storageGet } from '$lib/scripts/storage.js';
+	import { storageGet, storageRemove } from '$lib/scripts/storage.js';
 	import { materialEasing } from '$lib/utils/motion.js';
 	import { page } from '$app/stores';
 	import NavBar from '$lib/components/NavBar.svelte';
@@ -49,6 +50,32 @@
 	// server so the user sees their account data.
 	$effect(() => {
 		if (!_authStore.isLoading && _authStore.isLoggedIn && !_authStore.isGuest) {
+			const pendingAction = storageGet('_pendingProfileAction');
+			if (pendingAction) {
+				_authStore.saveCurrentProfile();
+
+				// If adding a new account, link the new account to the previous
+				// account's profile family (handles family linking when the
+				// profile_family_id cookie doesn't survive the OAuth redirect).
+				if (pendingAction === 'add') {
+					const familyId = storageGet('_pendingProfileFamilyId');
+					if (familyId && _authStore.user?.authUserId) {
+						fetch('/api/profiles/link-to-family', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ familyId })
+						}).catch(() => {});
+					}
+					storageRemove('_pendingProfileFamilyId');
+				}
+
+				storageRemove('_pendingProfileAction');
+				if ($page.url.pathname !== '/profiles') {
+					goto(resolve('/profiles'));
+				}
+				return;
+			}
+
 			const wasGuest = storageGet('authMode') === 'guest';
 			const hasGuestData =
 				(storageGet('todos') || []).length > 0 || (storageGet('archivedTodos') || []).length > 0;
@@ -56,6 +83,7 @@
 			// Only pause auto-load when we specifically have guest data to migrate.
 			if (!wasGuest || !hasGuestData) {
 				_todoStore.loadFromApi();
+				_authStore.loadActiveProfile();
 			}
 		}
 	});

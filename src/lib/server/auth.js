@@ -4,6 +4,10 @@ import { SvelteKitAuth } from '@auth/sveltekit';
 import Google from '@auth/core/providers/google';
 import Apple from '@auth/core/providers/apple';
 import { upsertUser } from './todoService.js';
+import { connectDB } from './db.js';
+import { User } from './models/User.js';
+import { linkProfileToFamily } from './profileService.js';
+import { randomUUID } from 'node:crypto';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AUTH_SECRET } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 
@@ -13,9 +17,21 @@ const APPLE_KEY_ID = env.APPLE_KEY_ID;
 const APPLE_PRIVATE_KEY = env.APPLE_PRIVATE_KEY;
 
 /**
- * @typedef {import('@auth/core/types').Session & { user: { authUserId?: string, provider?: string } }} AuthSession
- * @typedef {import('@auth/core/types').JWT & { authUserId?: string, provider?: string }} AuthJWT
+ * @typedef {import('@auth/core/types').Session & { user: { authUserId?: string, provider?: string, familyId?: string } }} AuthSession
+ * @typedef {import('@auth/core/types').JWT & { authUserId?: string, provider?: string, familyId?: string }} AuthJWT
  */
+
+/**
+ * Parse a cookie value by name from a cookie header string.
+ * @param {string | null} cookieHeader
+ * @param {string} name
+ * @returns {string | null}
+ */
+function parseCookie(cookieHeader, name) {
+	if (!cookieHeader) return null;
+	const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+	return match ? decodeURIComponent(match[1]) : null;
+}
 
 /**
  * Auth.js configuration for SvelteKit.
@@ -44,13 +60,53 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 	callbacks: {
 		/**
 		 * JWT callback — attach authUserId and provider to the token.
-		 * @param {{ token: AuthJWT, account: import('@auth/core/types').Account | null, profile?: import('@auth/core/types').Profile }} params
+		 * @param {{ token: AuthJWT, account: import('@auth/core/types').Account | null, profile?: import('@auth/core/types').Profile, request?: Request }} params
 		 * @returns {Promise<AuthJWT>}
 		 */
-		async jwt({ token, account }) {
+		async jwt({ token, account, profile, request }) {
 			if (account) {
+				await connectDB();
+
 				token.authUserId = account.providerAccountId;
 				token.provider = account.provider;
+
+				// Determine familyId: check cookie first, then existing user, then generate
+				let familyId = request
+					? parseCookie(request.headers.get('cookie') || '', 'profile_family_id')
+					: null;
+
+				if (!familyId) {
+					const existingUser = await User.findOne({ authUserId: token.authUserId }).select('familyId').lean();
+					familyId = existingUser?.familyId;
+				}
+
+				if (!familyId) {
+					familyId = randomUUID();
+				}
+
+				token.familyId = familyId;
+
+				// Save familyId + tokens to User document
+				await User.updateOne(
+					{ authUserId: token.authUserId },
+					{
+						$set: {
+							familyId,
+							accessToken: account.access_token,
+							refreshToken: account.refresh_token
+						}
+					},
+					{ upsert: true }
+				);
+
+				// Link/add to ProfileFamily
+				await linkProfileToFamily(familyId, {
+					authUserId: token.authUserId,
+					email: profile?.email || '',
+					name: profile?.name || '',
+					picture: profile?.picture || '',
+					provider: account.provider || 'google'
+				});
 			}
 			return token;
 		},
@@ -65,6 +121,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			if (session.user && token.authUserId) {
 				session.user.authUserId = token.authUserId;
 				session.user.provider = token.provider;
+				session.user.familyId = token.familyId;
 
 				// Upsert user document in MongoDB (create on first login, update on subsequent)
 				try {

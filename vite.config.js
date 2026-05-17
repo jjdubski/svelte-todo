@@ -24,6 +24,8 @@ export default defineConfig({
 		sveltekit(),
 		VitePWA({
 			registerType: 'autoUpdate',
+			// Serve manifest + SW in dev mode (otherwise /manifest.webmanifest returns 404)
+			devOptions: { enabled: true },
 			includeAssets: ['app-icon.svg', 'app-icon-192.png', 'app-icon-512.png', 'favicon.svg'],
 			manifest: {
 				name: 'Svelte Todo',

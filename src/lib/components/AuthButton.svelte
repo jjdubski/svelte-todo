@@ -1,5 +1,6 @@
 <script>
 	import { getAuthStore } from '$lib/state/authStore.svelte.js';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 
 	const auth = getAuthStore();
@@ -12,6 +13,11 @@
 	async function handleSignOut() {
 		showMenu = false;
 		await auth.logout();
+	}
+
+	async function handleSwitchProfile() {
+		showMenu = false;
+		await goto(resolve('/profiles'));
 	}
 
 	function handleBlur() {
@@ -32,19 +38,19 @@
 			aria-label="User menu"
 			aria-expanded={showMenu}
 		>
-			{#if auth.user.picture}
-				<img src={auth.user.picture} alt="" class="h-7 w-7 rounded-full" />
+			{#if auth.activeProfile?.picture || auth.user?.picture}
+				<img src={auth.activeProfile?.picture || auth.user?.picture} alt="" class="h-7 w-7 rounded-full" />
 			{:else}
 				<div
 					class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
 					style="background: var(--btn-primary);"
 				>
-					{(auth.user.name || auth.user.email || '?')[0].toUpperCase()}
+					{(auth.activeProfile?.name || auth.activeProfile?.email || auth.user.name || auth.user.email || '?')[0].toUpperCase()}
 				</div>
 			{/if}
 			<!-- Show this on large screen sizes but on < base hide it -->
 			<span class="hidden text-xs lg:inline" style="color: var(--text-secondary);">
-				{auth.user.name || auth.user.email || ''}
+				{auth.activeProfile?.name || auth.activeProfile?.email || auth.user?.name || auth.user?.email || ''}
 			</span>
 		</button>
 		{#if showMenu}
@@ -55,6 +61,14 @@
 				style="background: var(--card-bg); border-color: var(--border);"
 				onclick={() => (showMenu = false)}
 			>
+				<button
+					type="button"
+					onclick={handleSwitchProfile}
+					class="w-full cursor-pointer border-none bg-transparent px-4 py-2 text-left text-xs"
+					style="color: var(--text);"
+				>
+					Switch Profile…
+				</button>
 				<button
 					type="button"
 					onclick={handleSignOut}

@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { permanentDeleteTodo } from '$lib/server/todoService.js';
+import { resolveEffectiveAuthUserId } from '$lib/server/profileService.js';
 
 /**
  * POST /api/todos/permanent-delete — Permanently delete an archived todo.
@@ -9,8 +10,8 @@ import { permanentDeleteTodo } from '$lib/server/todoService.js';
  */
 export async function POST(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
@@ -21,7 +22,7 @@ export async function POST(event) {
 			return error(400, 'id is required');
 		}
 
-		await permanentDeleteTodo(session.user.authUserId, id);
+		await permanentDeleteTodo(authUserId, id);
 		return json({ success: true });
 	} catch (err) {
 		if (err.message === 'Todo not found') {

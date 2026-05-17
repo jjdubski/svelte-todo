@@ -11,7 +11,7 @@ Allow users to sign into multiple different Google accounts and switch between t
 
 Each profile **is** a separate Google OAuth identity. The app only ever has one active Auth.js session at a time. Switching profiles = sign out of current → sign in with different Google account.
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │                   localStorage                       │
 │  savedProfiles: [...]   _pendingProfileAction        │
@@ -41,11 +41,10 @@ Each profile **is** a separate Google OAuth identity. The app only ever has one 
 
 ### localStorage additions
 
-| Key | Type | Purpose |
-|-----|------|---------|
-| `savedProfiles` | `ProfileEntry[]` | All known profiles on this device |
+| Key                     | Type                        | Purpose                               |
+| ----------------------- | --------------------------- | ------------------------------------- |
+| `savedProfiles`         | `ProfileEntry[]`            | All known profiles on this device     |
 | `_pendingProfileAction` | `'switch' \| 'add' \| null` | Intent flag set before OAuth redirect |
-
 
 ### ProfileEntry shape
 
@@ -62,7 +61,7 @@ Each profile **is** a separate Google OAuth identity. The app only ever has one 
 
 ## New Route: `/profiles`
 
-```
+```text
 src/routes/
 ├── +layout.svelte         # Root layout — add pending-profile-action handler
 ├── +page.svelte           # Login/landing page (no change)
@@ -79,6 +78,7 @@ The `/profiles` route sits outside the `(app)` group so it doesn't inherit the S
 ### NEW — ProfileSwitcher.svelte (rendered by `/profiles/+page.svelte`)
 
 Displays:
+
 - **ProfileCard** for each saved profile (avatar, name, email, "Active" badge, Remove button)
 - **"Add Account"** button (sign out → sign in via Google)
 - **Guest profile card** (when guest data exists or guest is active)
@@ -88,7 +88,7 @@ Displays:
 
 The dropdown now includes a "Switch Profile…" option above "Sign out" for authenticated users:
 
-```
+```text
 ┌─────────────────┐
 │ jane@gmail.com   │  ← user info header (not clickable)
 │─────────────────│
@@ -105,44 +105,46 @@ Guest users still see the "Sign in" link (no change).
 
 ### New methods
 
-| Method | Behavior |
-|--------|----------|
-| `saveCurrentProfile()` | Upserts current `auth.user` into `savedProfiles` in localStorage |
-| `switchToProfile(authUserId, email)` | Sets pending flags → `signOut({ redirect: false })` → `signIn('google', { callbackUrl: '/profiles', authorizationParams: { login_hint: email } })` |
-| `addNewProfile()` | Sets pending flag → `signOut({ redirect: false })` → `signIn('google', { callbackUrl: '/profiles' })` |
-| `switchToGuest()` | Sets `authMode = 'guest'` → `signOut({ redirect: false })` → navigates to `/tasks` |
-| `getSavedProfiles()` | Reads and returns `savedProfiles` from localStorage |
-| `removeSavedProfile(authUserId)` | Removes entry from localStorage list |
+| Method                               | Behavior                                                                                                                                           |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `saveCurrentProfile()`               | Upserts current `auth.user` into `savedProfiles` in localStorage                                                                                   |
+| `switchToProfile(authUserId)` | Sets pending flags → looks up email from savedProfiles → `signOut({ redirect: false })` → `signIn('google', { callbackUrl: '/profiles', authorizationParams: { login_hint: email } })` |
+| `addNewProfile()`                    | Sets pending flag → `signOut({ redirect: false })` → `signIn('google', { callbackUrl: '/profiles' })`                                              |
+| `switchToGuest()`                    | Sets `authMode = 'guest'` → `signOut({ redirect: false })` → navigates to `/tasks`                                                                 |
+| `getSavedProfiles()`                 | Reads and returns `savedProfiles` from localStorage                                                                                                |
+| `removeSavedProfile(authUserId)`     | Removes entry from localStorage list                                                                                                               |
 
 ## OAuth Flow: Switching Profiles
 
-```
+```text
 User clicks "Switch to work@gmail.com"
   ↓
 1. saveCurrentProfile() — saves jane@gmail.com to savedProfiles
 2. _pendingProfileAction = 'switch'
-3. signOut({ redirect: false })
-4. signIn('google', { callbackUrl: '/profiles', authorizationParams: { login_hint: 'work@gmail.com' } })
+3. switchToProfile('google-work-id') looks up work@gmail.com from savedProfiles
+4. signOut({ redirect: false })
+5. signIn('google', { callbackUrl: '/profiles', authorizationParams: { login_hint: 'work@gmail.com' } })
   ↓  (Google OAuth redirect)
-5. User authorizes on Google consent/chooser
+6. User authorizes on Google consent/chooser
   ↓  (OAuth callback → new session)
-6. Browser lands on /profiles
-7. AuthStore._init() → _fetchSession() → user = work@gmail.com
-8. Root layout effect fires → pendingAction detected
-9. saveCurrentProfile() saves work@gmail.com
-10. Clear pending flags
-11. Profile list shows both accounts
+7. Browser lands on /profiles
+8. AuthStore._init() → _fetchSession() → user = work@gmail.com
+9. Root layout effect fires → pendingAction detected
+10. saveCurrentProfile() saves work@gmail.com
+11. Clear pending flags
+12. Profile list shows both accounts
 ```
 
 ## OAuth Flow: Adding a New Account
 
 Same as switching, but:
+
 - No `login_hint` is passed — Google shows the full account chooser.
 - `_pendingProfileAction = 'add'`
 
 ## OAuth Flow: Switching to Guest
 
-```
+```text
 User clicks "Switch to Guest" on /profiles
   ↓
 1. Save current profile (if signed in)
@@ -180,14 +182,14 @@ $effect(() => {
 
 ## Acceptance Criteria Mapping
 
-| Requirement | How it's met |
-|-------------|-------------|
-| User can login to a new profile (different Google account) | "Add Account" button triggers OAuth for a new Google account |
-| User can switch between profiles | Profile cards on `/profiles` page trigger signOut + signIn with `login_hint` |
-| Each profile has its own todos, settings, and data | Already the case — each Google account has its own MongoDB document |
-| Profile switching is smooth and doesn't lose data | `saveCurrentProfile()` always runs first; pending flags survive the redirect |
-| Authenticated users can have multiple profiles | `savedProfiles` list in localStorage persists across sessions |
-| Support guest profiles | Guest appears as a profile option; switching to guest sets `authMode=guest` |
+| Requirement                                                | How it's met                                                                 |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| User can login to a new profile (different Google account) | "Add Account" button triggers OAuth for a new Google account                 |
+| User can switch between profiles                           | Profile cards on `/profiles` page trigger signOut + signIn with `login_hint` |
+| Each profile has its own todos, settings, and data         | Already the case — each Google account has its own MongoDB document          |
+| Profile switching is smooth and doesn't lose data          | `saveCurrentProfile()` always runs first; pending flags survive the redirect |
+| Authenticated users can have multiple profiles             | `savedProfiles` list in localStorage persists across sessions                |
+| Support guest profiles                                     | Guest appears as a profile option; switching to guest sets `authMode=guest`  |
 
 ## Edge Cases Covered
 

@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { updateTodo, archiveTodo } from '$lib/server/todoService.js';
+import { resolveEffectiveAuthUserId } from '$lib/server/profileService.js';
 
 /**
  * PUT /api/todos/[id] — Update a todo.
@@ -9,8 +10,8 @@ import { updateTodo, archiveTodo } from '$lib/server/todoService.js';
  */
 export async function PUT(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
@@ -20,7 +21,7 @@ export async function PUT(event) {
 		}
 
 		const body = await event.request.json();
-		const updated = await updateTodo(session.user.authUserId, todoId, body);
+		const updated = await updateTodo(authUserId, todoId, body);
 		return json(updated);
 	} catch (err) {
 		if (err.message === 'Todo not found') {
@@ -39,8 +40,8 @@ export async function PUT(event) {
  */
 export async function DELETE(event) {
 	try {
-		const session = await event.locals.auth();
-		if (!session?.user?.authUserId) {
+		const authUserId = await resolveEffectiveAuthUserId(event);
+		if (!authUserId) {
 			return error(401, 'Unauthorized');
 		}
 
@@ -49,7 +50,7 @@ export async function DELETE(event) {
 			return error(400, 'Invalid todo ID');
 		}
 
-		const archived = await archiveTodo(session.user.authUserId, todoId);
+		const archived = await archiveTodo(authUserId, todoId);
 		return json(archived);
 	} catch (err) {
 		if (err.message === 'Todo not found') {
