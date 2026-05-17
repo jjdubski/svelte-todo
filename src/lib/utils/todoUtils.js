@@ -43,10 +43,10 @@ export function fuzzyMatch(query, text) {
 /**
  * Compute statistics from a list of todos.
  * @param {Array} todos - Array of todo objects
+ * @param {string} [today] - Reference local date (YYYY-MM-DD)
  * @returns {Stats} Statistics object with active, completed, overdue, and total counts
  */
-export function computeStats(todos) {
-	const today = localDateStr();
+export function computeStats(todos, today = localDateStr()) {
 	const active = todos.filter((t) => !t.completed).length;
 	const completed = todos.filter((t) => t.completed).length;
 	const overdue = todos.filter((t) => !t.completed && t.dueDate && t.dueDate < today).length;
@@ -134,21 +134,21 @@ export function computeCategoryBreakdown(todos) {
 /**
  * Get array of overdue (active past-due) tasks.
  * @param {Array} todos - Array of todo objects
+ * @param {string} [today] - Reference local date (YYYY-MM-DD)
  * @returns {Array} Array of overdue todos
  */
-export function computeOverdueTasks(todos) {
-	const today = localDateStr();
+export function computeOverdueTasks(todos, today = localDateStr()) {
 	return todos.filter((t) => !t.completed && t.dueDate && t.dueDate < today);
 }
 
 /**
  * Compute tasks due within the next 2 days (not completed), sorted by date.
  * @param {Array} todos - Array of todo objects
+ * @param {string} [todayStr] - Reference local date (YYYY-MM-DD)
  * @returns {Array} Array of upcoming due todos
  */
-export function computeUpcomingDue(todos) {
-	const today = new Date();
-	const todayStr = localDateStr(today);
+export function computeUpcomingDue(todos, todayStr = localDateStr()) {
+	const today = new Date(`${todayStr}T00:00:00`);
 	const twoDaysStr = localDateStr(addDays(today, 2));
 
 	return todos

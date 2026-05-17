@@ -215,6 +215,9 @@ class TodoStore {
 	todos = $state([]);
 	/** @type {Todo[]} */
 	archivedTodos = $state([]);
+	/** @type {string} */
+	todayDate = $state(localDateStr());
+	_todayRefreshTimer = null;
 
 	// ── Categories ──
 	/** @type {string[]} */
@@ -402,9 +405,9 @@ class TodoStore {
 
 	// ── Derived values ──
 	/** @type {Stats} */
-	stats = $derived(this._computeStats(this.todos));
+	stats = $derived(this._computeStats(this.todos, this.todayDate));
 	/** @type {Todo[]} */
-	upcomingDueTasks = $derived(this._computeUpcomingDue(this.todos));
+	upcomingDueTasks = $derived(this._computeUpcomingDue(this.todos, this.todayDate));
 	/** @type {Todo[]} */
 	filteredTodos = $state([]);
 
@@ -418,7 +421,7 @@ class TodoStore {
 	/** @type {Record<string,number>} */
 	categoryBreakdown = $derived(this._computeCategoryBreakdown([...this.todos, ...this.archivedTodos]));
 	/** @type {Todo[]} */
-	overdueTasks = $derived(this._computeOverdueTasks(this.todos));
+	overdueTasks = $derived(this._computeOverdueTasks(this.todos, this.todayDate));
 
 	/** @type {boolean} */
 	storageError = $state(false);
@@ -433,6 +436,12 @@ class TodoStore {
 
 		// Storage event listener for cross-tab sync
 		if (typeof window !== 'undefined') {
+			this._refreshTodayDate();
+			if (typeof document !== 'undefined') {
+				this._scheduleTodayRefresh();
+				document.addEventListener('visibilitychange', this._handleVisibilityChange.bind(this));
+				window.addEventListener('focus', this._handleWindowFocus.bind(this));
+			}
 			window.addEventListener('storage', this._handleStorageChange.bind(this));
 		}
 
@@ -476,8 +485,21 @@ class TodoStore {
 			const fdf = this.filterDateFrom;
 			const fdt = this.filterDateTo;
 			const dueKeyword = this.filterDueKeyword;
+			const today = this.todayDate;
 
-			this.filteredTodos = this._computeFiltered(todos, textQuery, fs, fc, sb, fp, ftags, fdf, fdt, dueKeyword);
+			this.filteredTodos = this._computeFiltered(
+				todos,
+				textQuery,
+				fs,
+				fc,
+				sb,
+				fp,
+				ftags,
+				fdf,
+				fdt,
+				dueKeyword,
+				today
+			);
 
 			// Compute active filter count
 			let count = 0;
@@ -638,6 +660,42 @@ class TodoStore {
 		}
 	}
 
+	_refreshTodayDate() {
+		const next = localDateStr();
+		if (this.todayDate !== next) {
+			this.todayDate = next;
+		}
+	}
+
+	_scheduleTodayRefresh() {
+		if (typeof window === 'undefined' || typeof document === 'undefined') return;
+		if (this._todayRefreshTimer) {
+			clearTimeout(this._todayRefreshTimer);
+		}
+
+		const now = new SvelteDate();
+		const nextMidnight = new SvelteDate(now);
+		nextMidnight.setHours(24, 0, 0, 0);
+		const msUntilNextMidnight = Math.max(1000, nextMidnight.getTime() - now.getTime() + 1000);
+
+		this._todayRefreshTimer = setTimeout(() => {
+			this._refreshTodayDate();
+			this._scheduleTodayRefresh();
+		}, msUntilNextMidnight);
+	}
+
+	_handleVisibilityChange() {
+		if (typeof document === 'undefined') return;
+		if (document.visibilityState !== 'visible') return;
+		this._refreshTodayDate();
+		this._scheduleTodayRefresh();
+	}
+
+	_handleWindowFocus() {
+		this._refreshTodayDate();
+		this._scheduleTodayRefresh();
+	}
+
 	_getInitialDarkMode() {
 		const saved = storageGet('darkMode');
 		if (saved !== null) return saved;
@@ -664,10 +722,11 @@ class TodoStore {
 
 	/**
 	 * @param {Todo[]} todos
+	 * @param {string} [today]
 	 * @returns {Stats}
 	 */
-	_computeStats(todos) {
-		return computeStats(todos);
+	_computeStats(todos, today = this.todayDate) {
+		return computeStats(todos, today);
 	}
 
 	/**
@@ -709,10 +768,11 @@ class TodoStore {
 	/**
 	 * Get array of overdue (active past-due) tasks.
 	 * @param {Todo[]} todos
+	 * @param {string} [today]
 	 * @returns {Todo[]}
 	 */
-	_computeOverdueTasks(todos) {
-		return computeOverdueTasks(todos);
+	_computeOverdueTasks(todos, today = this.todayDate) {
+		return computeOverdueTasks(todos, today);
 	}
 
 	/**
@@ -726,6 +786,7 @@ class TodoStore {
 	 * @param {string} [filterDateFrom]
 	 * @param {string} [filterDateTo]
 	 * @param {string} [filterDueKeyword]
+	 * @param {string} [today]
 	 * @returns {Todo[]}
 	 */
 	_computeFiltered(
@@ -738,7 +799,8 @@ class TodoStore {
 		filterTags,
 		filterDateFrom,
 		filterDateTo,
-		filterDueKeyword
+		filterDueKeyword,
+		today
 	) {
 		// Use instance values if not explicitly passed
 		const ft = filterText ?? this.filterText;
@@ -750,6 +812,7 @@ class TodoStore {
 		const fdf = filterDateFrom ?? this.filterDateFrom;
 		const fdt = filterDateTo ?? this.filterDateTo;
 		const dueKeyword = filterDueKeyword ?? this.filterDueKeyword;
+		const todayRef = today ?? this.todayDate;
 
 		let result = todos;
 
@@ -790,8 +853,7 @@ class TodoStore {
 
 		// Date range filter
 		if (dueKeyword === 'overdue') {
-			const today = localDateStr();
-			result = result.filter((t) => !t.completed && t.dueDate && t.dueDate < today);
+			result = result.filter((t) => !t.completed && t.dueDate && t.dueDate < todayRef);
 		}
 
 		if (fdf) {
@@ -1794,10 +1856,11 @@ class TodoStore {
 	/**
 	 * Compute tasks due within the next 2 days (not completed), sorted by date.
 	 * @param {Todo[]} todos
+	 * @param {string} [today]
 	 * @returns {Todo[]}
 	 */
-	_computeUpcomingDue(todos) {
-		return computeUpcomingDue(todos);
+	_computeUpcomingDue(todos, today = this.todayDate) {
+		return computeUpcomingDue(todos, today);
 	}
 
 	// ── Notifications ──
@@ -1836,7 +1899,7 @@ class TodoStore {
 		if (Notification.permission !== 'granted') return;
 		if (!this.dueDateRemindersEnabled) return;
 
-		const today = localDateStr();
+		const today = this.todayDate;
 		const dueToday = this.todos.filter((t) => !t.completed && t.dueDate === today);
 		const overdue = this.todos.filter((t) => !t.completed && t.dueDate && t.dueDate < today);
 

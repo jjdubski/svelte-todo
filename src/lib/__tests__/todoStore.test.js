@@ -100,6 +100,19 @@ describe('utils.js functions', () => {
 			expect(stats.overdue).toBe(0);
 			expect(stats.total).toBe(2);
 		});
+
+		it('respects injected reference date for overdue calculation', () => {
+			const todos = [
+				{ id: 1, completed: false, dueDate: '2026-05-15' },
+				{ id: 2, completed: false, dueDate: '2026-05-17' }
+			];
+
+			const statsOnMay16 = computeStats(todos, '2026-05-16');
+			expect(statsOnMay16.overdue).toBe(1);
+
+			const statsOnMay18 = computeStats(todos, '2026-05-18');
+			expect(statsOnMay18.overdue).toBe(2);
+		});
 	});
 
 	describe('getRandomTagColor', () => {
@@ -296,6 +309,16 @@ describe('utils.js functions', () => {
 			expect(result).toHaveLength(1);
 			expect(result[0].id).toBe(1);
 		});
+
+		it('respects injected reference date for overdue task selection', () => {
+			const todos = [
+				{ id: 1, completed: false, dueDate: '2026-05-15' },
+				{ id: 2, completed: false, dueDate: '2026-05-16' }
+			];
+
+			const result = computeOverdueTasks(todos, '2026-05-16');
+			expect(result.map((t) => t.id)).toEqual([1]);
+		});
 	});
 
 	describe('computeUpcomingDue', () => {
@@ -341,6 +364,18 @@ describe('utils.js functions', () => {
 			const result = computeUpcomingDue(todos);
 			expect(result[0].id).toBe(2);
 			expect(result[1].id).toBe(1);
+		});
+
+		it('respects injected reference date for upcoming window', () => {
+			const todos = [
+				{ id: 1, completed: false, dueDate: '2026-05-16' },
+				{ id: 2, completed: false, dueDate: '2026-05-17' },
+				{ id: 3, completed: false, dueDate: '2026-05-18' },
+				{ id: 4, completed: false, dueDate: '2026-05-19' }
+			];
+
+			const result = computeUpcomingDue(todos, '2026-05-16');
+			expect(result.map((t) => t.id)).toEqual([1, 2, 3]);
 		});
 	});
 });
@@ -1133,6 +1168,73 @@ describe('_computeFiltered', () => {
 			expect(result).toHaveLength(1);
 			expect(result[0].id).toBe('1');
 		});
+
+		it('uses injected today value when filtering due:overdue', () => {
+			const result = store._computeFiltered(
+				store.todos,
+				'',
+				'all',
+				'',
+				'manual',
+				'all',
+				[],
+				'',
+				'',
+				'overdue',
+				'2024-01-16'
+			);
+
+			expect(result.map((t) => t.id)).toEqual(['1']);
+		});
+	});
+});
+
+describe('day rollover overdue reactivity', () => {
+	/** @type {import('../state/todoStore.svelte.js').default} */
+	let store;
+
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', {
+			getItem: vi.fn(() => null),
+			setItem: vi.fn(),
+			removeItem: vi.fn(),
+			clear: vi.fn(),
+			get length() {
+				return 0;
+			},
+			key: vi.fn(() => null)
+		});
+		store = new TodoStore();
+		store.todos = [
+			{
+				id: 'rollover-1',
+				title: 'Yesterday task',
+				completed: false,
+				dueDate: '2026-05-15',
+				createdAt: '2026-05-14T00:00:00.000Z'
+			},
+			{
+				id: 'rollover-2',
+				title: 'Today task',
+				completed: false,
+				dueDate: '2026-05-16',
+				createdAt: '2026-05-14T00:00:00.000Z'
+			}
+		];
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('recomputes overdue stats and tasks when todayDate changes', () => {
+		store.todayDate = '2026-05-16';
+		expect(store.stats.overdue).toBe(1);
+		expect(store.overdueTasks.map((t) => t.id)).toEqual(['rollover-1']);
+
+		store.todayDate = '2026-05-17';
+		expect(store.stats.overdue).toBe(2);
+		expect(store.overdueTasks.map((t) => t.id)).toEqual(['rollover-1', 'rollover-2']);
 	});
 });
 
