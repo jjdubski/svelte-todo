@@ -80,7 +80,7 @@
 				aria-expanded={mobileMenuOpen}
 				aria-label="Toggle mobile navigation menu"
 			>
-				<span class="text-large font-medium">{currentPageLabel}</span>
+				<span class="text-base font-medium max-sm:text-lg" id="current-page-label">{currentPageLabel}</span>
 				<span
 					class="inline-flex transition-transform duration-200"
 					class:rotate-180={mobileMenuOpen}

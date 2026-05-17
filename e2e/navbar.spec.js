@@ -64,7 +64,7 @@ test.describe('NavBar', () => {
 			// The toggle shows the current page label
 			const toggle = page.locator('.mobile-nav-toggle');
 			await expect(toggle).toBeVisible();
-			await expect(toggle.locator('span.text-sm')).toHaveText('Tasks');
+			await expect(toggle.locator('#current-page-label')).toHaveText('Tasks');
 
 			// The triangle SVG is present inside the toggle
 			const triangle = toggle.locator('svg');
@@ -143,7 +143,7 @@ test.describe('NavBar', () => {
 			await page.waitForURL(/\/board/);
 
 			// The toggle should now show "Board"
-			const toggle = page.locator('.mobile-nav-toggle span.text-sm');
+			const toggle = page.locator('.mobile-nav-toggle span.text-base');
 			await expect(toggle).toHaveText('Board');
 		});
 
@@ -173,7 +173,7 @@ test.describe('NavBar', () => {
 				}
 
 				// Verify toggle shows new current page
-				await expect(page.locator('.mobile-nav-toggle span.text-sm')).toHaveText(label);
+				await expect(page.locator('.mobile-nav-toggle span.text-base')).toHaveText(label);
 
 				// Verify dropdown is closed
 				await expect(page.locator('.mobile-nav-dropdown')).not.toBeVisible();

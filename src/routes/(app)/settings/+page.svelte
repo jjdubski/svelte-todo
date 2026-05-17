@@ -1,6 +1,7 @@
 <script>
 	import { getTodoStore } from '$lib/state/todoStore.svelte.js';
 	import { getThemeStore } from '$lib/state/themeStore.svelte.js';
+	import ColorPicker from '$lib/components/ColorPicker.svelte';
 
 	const store = getTodoStore();
 	const themeStore = getThemeStore();
@@ -154,85 +155,43 @@
 		</div>
 
 		<div class="rounded-xl border p-3" style="border-color: var(--border); background: var(--todo-bg);">
-			<div class="mb-2 flex items-center justify-between gap-2">
-				<label for="accent-color" class="text-sm font-medium" style="color: var(--text-heading);"
-					>Accent color</label
-				>
-				<span class="text-xs uppercase" style="color: var(--text-muted);">{themeStore.accentColor}</span>
-			</div>
-			<input
-				id="accent-color"
-				type="color"
-				class="h-10 w-full cursor-pointer rounded border"
-				style="border-color: var(--border); background: var(--card-bg);"
+			<ColorPicker
+				label="Accent color"
 				value={themeStore.accentColor}
-				oninput={(e) => {
-					const color = e.currentTarget.value.toLowerCase();
-					// Pure white/black as accent would be invisible in one mode — fall back to preset accent
-					if (color === '#ffffff' || color === '#000000') {
-						const preset = themeStore.presetThemes.find((p) => p.id === themeStore.themePreset);
-						themeStore.accentColor = preset?.accent || '#3b82f6';
-					} else {
-						themeStore.accentColor = color;
-					}
-				}}
+				oncolorchange={(c) => (themeStore.accentColor = c)}
 			/>
 		</div>
 
 		{#if themeStore.themePreset === 'custom'}
-			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-				<label
-					class="rounded-xl border p-3 text-sm"
-					style="border-color: var(--border); color: var(--text-secondary);"
-				>
-					Background
-					<input
-						type="color"
-						class="mt-2 h-9 w-full cursor-pointer rounded border"
-						style="border-color: var(--border); background: var(--card-bg);"
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<div class="rounded-xl border p-3" style="border-color: var(--border); background: var(--todo-bg);">
+					<ColorPicker
+						label="Background"
 						value={themeStore.bgColor}
-						oninput={(e) => (themeStore.bgColor = e.currentTarget.value)}
+						oncolorchange={(c) => (themeStore.bgColor = c)}
 					/>
-				</label>
-				<label
-					class="rounded-xl border p-3 text-sm"
-					style="border-color: var(--border); color: var(--text-secondary);"
-				>
-					Card
-					<input
-						type="color"
-						class="mt-2 h-9 w-full cursor-pointer rounded border"
-						style="border-color: var(--border); background: var(--card-bg);"
+				</div>
+				<div class="rounded-xl border p-3" style="border-color: var(--border); background: var(--todo-bg);">
+					<ColorPicker
+						label="Card"
 						value={themeStore.cardColor}
-						oninput={(e) => (themeStore.cardColor = e.currentTarget.value)}
+						oncolorchange={(c) => (themeStore.cardColor = c)}
 					/>
-				</label>
-				<label
-					class="rounded-xl border p-3 text-sm"
-					style="border-color: var(--border); color: var(--text-secondary);"
-				>
-					Text
-					<input
-						type="color"
-						class="mt-2 h-9 w-full cursor-pointer rounded border"
-						style="border-color: var(--border); background: var(--card-bg);"
+				</div>
+				<div class="rounded-xl border p-3" style="border-color: var(--border); background: var(--todo-bg);">
+					<ColorPicker
+						label="Text"
 						value={themeStore.textColor}
-						oninput={(e) => (themeStore.textColor = e.currentTarget.value)}
+						oncolorchange={(c) => (themeStore.textColor = c)}
 					/>
-				</label>
-				<label
-					class="rounded-xl border p-3 text-sm"
-					style="border-color: var(--border); color: var(--text-secondary);"
-				>
-					Border
-					<input
-						type="color"
-						class="mt-2 h-9 w-full cursor-pointer rounded border"
-						style="border-color: var(--border); background: var(--card-bg);"
+				</div>
+				<div class="rounded-xl border p-3" style="border-color: var(--border); background: var(--todo-bg);">
+					<ColorPicker
+						label="Border"
 						value={themeStore.borderColor}
-						oninput={(e) => (themeStore.borderColor = e.currentTarget.value)}
+						oncolorchange={(c) => (themeStore.borderColor = c)}
 					/>
-				</label>
+				</div>
 			</div>
 		{/if}
 	</section>
