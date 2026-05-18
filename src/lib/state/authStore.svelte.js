@@ -1,6 +1,20 @@
 import { createContext } from 'svelte';
 import { storageGet, storageSet, storageRemove } from '$lib/scripts/storage.js';
 
+/** @type {Promise<typeof import('@auth/sveltekit/client')> | null} */
+let _authClientPromise = null;
+
+/**
+ * Lazily load and cache the @auth/sveltekit/client module.
+ * @returns {Promise<typeof import('@auth/sveltekit/client')>}
+ */
+function _getAuthClient() {
+	if (!_authClientPromise) {
+		_authClientPromise = import('@auth/sveltekit/client');
+	}
+	return _authClientPromise;
+}
+
 class AuthStore {
 	/** @type {import('@auth/sveltekit').Session | null} */
 	user = $state(null);
@@ -10,6 +24,8 @@ class AuthStore {
 	isLoading = $state(true);
 	/** @type {boolean} */
 	isGuest = $state(false);
+	/** @type {number} */
+	profilesVersion = $state(0);
 	/** @type {(() => Promise<void>) | null} */
 	_reloadTodos = null;
 
@@ -26,9 +42,14 @@ class AuthStore {
 		this._reloadTodos = fn;
 	}
 
+	/**
+	 * Notify profile-dependent UI to re-fetch profiles.
+	 */
+	notifyProfilesChanged() {
+		this.profilesVersion += 1;
+	}
+
 	_init() {
-		// Always try to fetch the session first — don't short-circuit on guest mode,
-		// because the user may have authenticated since the last visit.
 		const wasGuest = storageGet('authMode') === 'guest';
 		this._fetchSession(wasGuest);
 	}
@@ -38,8 +59,7 @@ class AuthStore {
 	 * If a valid session exists, the user is logged in.
 	 * If no session and the user was previously in guest mode, fall back to guest behavior.
 	 *
-	 * NOTE: We do NOT clear `authMode` here — the migration dialog handles that
-	 * after it has had a chance to read the 'guest' marker and offer data migration.
+	 * NOTE: We do NOT clear `authMode` here — the migration dialog handles that.
 	 * @param {boolean} wasGuest
 	 */
 	async _fetchSession(wasGuest) {
@@ -52,21 +72,25 @@ class AuthStore {
 					this.isLoggedIn = true;
 					this.isLoading = false;
 
-					// Sync profile_family_id cookie for multi-account linking.
-					// This is a fire-and-forget idempotent call — always run it
-					// because HttpOnly cookies are invisible to document.cookie.
-					if (data.user.familyId) {
-						fetch('/api/profiles/family-sync', { method: 'POST' }).catch(() => {});
+					// Ensure linked_profiles cookie exists (lazy-create on first sign-in)
+					try {
+						await fetch('/api/profiles/ensure', { method: 'POST' });
+					} catch {
+						// Non-critical — GET /api/profiles also creates it lazily
 					}
 
 					return;
 				}
 			}
-		} catch {
-			// Session fetch failed (offline or not logged in)
+		} catch (err) {
+			console.error('[authStore] /auth/session request failed', err);
 		}
 
 		// No valid session found
+		// Clean up abandoned "Add Account" flow (user backed out of OAuth)
+		if (storageGet('_pendingProfileAction')) {
+			storageRemove('_pendingProfileAction');
+		}
 		if (wasGuest) {
 			this.isGuest = true;
 		}
@@ -78,71 +102,118 @@ class AuthStore {
 	 * @param {string} provider
 	 */
 	async login(provider) {
-		const { signIn } = await import('@auth/sveltekit/client');
+		const { signIn } = await _getAuthClient();
 		await signIn(provider, { callbackUrl: '/tasks' });
 	}
 
 	async logout() {
-		const { signOut } = await import('@auth/sveltekit/client');
+		storageRemove('_pendingProfileAction');
+		const { signOut } = await _getAuthClient();
 		await signOut({ callbackUrl: '/' });
 	}
 
 	/**
-	 * Switch to a different profile in the same family.
-	 * Uses Auth.js Credentials provider (redirect: false) to mint a new session
-	 * for the target profile without navigating to a sign-in page.
+	 * Switch to a different linked profile.
+	 * Uses a dedicated server endpoint that mutates Auth.js session cookies
+	 * server-side (no client CSRF flow).
 	 * @param {string} authUserId
 	 */
 	async switchToProfile(authUserId) {
-		if (!authUserId || !this.user?.familyId) return;
-		const { signIn } = await import('@auth/sveltekit/client');
-		const result = await signIn('account-switch', {
-			targetAuthUserId: authUserId,
-			familyId: this.user.familyId,
-			redirect: false
-		});
+		if (!authUserId || !this.user?.authUserId) {
+			console.error('[authStore] switchToProfile missing identifiers', {
+				targetAuthUserId: authUserId,
+				currentAuthUserId: this.user?.authUserId || null
+			});
+			return;
+		}
 
-		if (result?.ok) {
-			// Session cookie has been updated server-side — re-fetch to sync client state
+		let switchRes;
+		let switchData = null;
+		try {
+			switchRes = await fetch('/api/profiles', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					targetAuthUserId: authUserId,
+					callbackUrl: window.location.pathname
+				})
+			});
+
 			try {
-				const res = await fetch('/auth/session');
-				if (res.ok) {
-					const data = await res.json();
-					if (data?.user) {
-						this.user = data.user;
-						this.isLoggedIn = true;
-						this.isGuest = false;
+				switchData = await switchRes.json();
+			} catch {
+				switchData = null;
+			}
+		} catch (err) {
+			console.error('[authStore] switchToProfile request to /api/profiles failed', err);
+			return;
+		}
+
+		if (!switchRes.ok || !switchData?.success) {
+			console.error('[authStore] switchToProfile endpoint returned failure', {
+				status: switchRes.status,
+				data: switchData,
+				targetAuthUserId: authUserId,
+				currentAuthUserId: this.user?.authUserId || null
+			});
+			return;
+		}
+
+		// Session cookie has been updated server-side — re-fetch to sync client state
+		try {
+			const res = await fetch('/auth/session');
+			if (res.ok) {
+				const data = await res.json();
+				if (data?.user) {
+					this.user = data.user;
+					this.isLoggedIn = true;
+					this.isGuest = false;
+
+					if (this.user?.authUserId !== authUserId) {
+						console.error('[authStore] switch session did not change to target authUserId', {
+							targetAuthUserId: authUserId,
+							actualAuthUserId: this.user?.authUserId || null,
+							switchResult: switchData
+						});
 					}
 				}
-			} catch {
-				// Session fetch failed — page reload will recover
+			} else {
+				console.error('[authStore] switchToProfile session refresh failed', {
+					status: res.status,
+					targetAuthUserId: authUserId,
+					currentAuthUserId: this.user?.authUserId
+				});
 			}
-
-			// Reload todo data to reflect the switched profile's content
-			// Uses the callback wired from +layout.svelte (component context) to avoid
-			// calling getContext() outside component initialization.
-			await this._reloadTodos?.();
+		} catch (err) {
+			console.error('[authStore] switchToProfile session refresh request error', err);
 		}
+
+		if (!this._reloadTodos) {
+			console.error('[authStore] switchToProfile reload callback not registered');
+		}
+		await this._reloadTodos?.();
 	}
 
 	async addNewProfile() {
 		storageSet('_pendingProfileAction', 'add');
 
-		// Save the current user's familyId so the new account can be linked
-		// to the same family after the OAuth flow completes.
-		if (this.user?.familyId) {
-			storageSet('_pendingProfileFamilyId', this.user.familyId);
+		const { signIn } = await _getAuthClient();
+		try {
+			await signIn('google', { callbackUrl: '/profiles' });
+		} catch (err) {
+			storageRemove('_pendingProfileAction');
+			console.error('[authStore] addNewProfile failed', {
+				error: err,
+				currentAuthUserId: this.user?.authUserId || null
+			});
 		}
-
-		const { signIn, signOut } = await import('@auth/sveltekit/client');
-		await signOut({ redirect: false });
-		await signIn('google', { callbackUrl: '/profiles' });
 	}
 
 	async switchToGuest() {
 		storageSet('authMode', 'guest');
+		storageRemove('_pendingProfileAction');
 
-		const { signOut } = await import('@auth/sveltekit/client');
+		const { signOut } = await _getAuthClient();
 		await signOut({ redirect: false });
 		window.location.href = '/tasks';
 	}
@@ -174,6 +245,7 @@ class AuthStore {
 
 	clearGuestMode() {
 		storageRemove('authMode');
+		storageRemove('_pendingProfileAction');
 		this.isGuest = false;
 	}
 }

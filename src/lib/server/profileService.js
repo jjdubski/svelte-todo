@@ -1,188 +1,126 @@
 import { connectDB } from './db.js';
 import { User } from './models/User.js';
-import { ProfileFamily } from './models/ProfileFamily.js';
+
+const COOKIE_NAME = 'linked_profiles';
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 2; // 2 years
+
+/** @typedef {{ authUserId: string, email?: string, name?: string, picture?: string, provider?: string, lastUsed?: string }} ProfileEntry */
 
 /**
- * Fetch all profiles in the current user's family.
- * @param {string} authUserId
- * @returns {Promise<Array<{ authUserId: string, email?: string, name?: string, picture?: string, provider?: string, lastUsed?: Date }>>}
+ * Parse the linked_profiles cookie value into an array of authUserId strings.
+ * @param {string | null | undefined} cookieValue
+ * @returns {string[]}
  */
-export async function getProfilesForUser(authUserId) {
-	if (!authUserId) {
+function parseLinkedProfiles(cookieValue) {
+	if (!cookieValue) return [];
+	try {
+		const parsed = JSON.parse(cookieValue);
+		return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string' && id) : [];
+	} catch {
 		return [];
 	}
-
-	await connectDB();
-	const user = await User.findOne({ authUserId }).select('familyId').lean();
-	if (!user?.familyId) {
-		return [];
-	}
-
-	const family = await ProfileFamily.findOne({ familyId: user.familyId }).select('profiles').lean();
-	return Array.isArray(family?.profiles) ? family.profiles : [];
 }
 
 /**
- * Upsert a profile entry into a profile family document.
- * @param {string} familyId
- * @param {{ authUserId: string, email?: string, name?: string, picture?: string, provider?: string }} profileData
- * @returns {Promise<void>}
+ * Common cookie options for linked_profiles.
+ * @param {boolean} secure
+ * @returns {import('@sveltejs/kit').CookieSerializeOptions}
  */
-export async function linkProfileToFamily(familyId, profileData) {
-	if (!familyId || !profileData?.authUserId) {
-		return;
-	}
-
-	await connectDB();
-	const now = new Date();
-
-	const normalized = {
-		authUserId: profileData.authUserId,
-		email: profileData.email || '',
-		name: profileData.name || '',
-		picture: profileData.picture || '',
-		provider: profileData.provider || 'google',
-		lastUsed: now
+function cookieOpts(secure) {
+	return {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure,
+		maxAge: COOKIE_MAX_AGE
 	};
-
-	const updateExisting = await ProfileFamily.updateOne(
-		{ familyId, 'profiles.authUserId': normalized.authUserId },
-		{
-			$set: {
-				'profiles.$.email': normalized.email,
-				'profiles.$.name': normalized.name,
-				'profiles.$.picture': normalized.picture,
-				'profiles.$.provider': normalized.provider,
-				'profiles.$.lastUsed': normalized.lastUsed
-			}
-		}
-	);
-
-	if (updateExisting.matchedCount > 0) {
-		return;
-	}
-
-	await ProfileFamily.updateOne(
-		{ familyId },
-		{
-			$setOnInsert: { familyId, createdAt: now },
-			$addToSet: { profiles: normalized }
-		},
-		{ upsert: true }
-	);
 }
 
 /**
- * Remove a profile entry from a family.
- * @param {string} familyId
+ * Read the linked_profiles cookie from a request event.
+ * @param {import('@sveltejs/kit').RequestEvent} event
+ * @returns {string[]}
+ */
+export function getLinkedProfiles(event) {
+	return parseLinkedProfiles(event.cookies.get(COOKIE_NAME));
+}
+
+/**
+ * Set the linked_profiles cookie on a response.
+ * @param {import('@sveltejs/kit').RequestEvent} event
+ * @param {string[]} authUserIds
+ */
+export function setLinkedProfiles(event, authUserIds) {
+	const value = JSON.stringify(authUserIds.filter((id) => id));
+	event.cookies.set(COOKIE_NAME, value, cookieOpts(process.env.NODE_ENV === 'production'));
+}
+
+/**
+ * Add an authUserId to the linked_profiles cookie if not already present.
+ * @param {import('@sveltejs/kit').RequestEvent} event
  * @param {string} authUserId
- * @returns {Promise<void>}
+ * @returns {string[]} The updated list
  */
-export async function removeProfileFromFamily(familyId, authUserId) {
-	if (!familyId || !authUserId) {
-		return;
+export function addLinkedProfile(event, authUserId) {
+	const ids = getLinkedProfiles(event);
+	if (!ids.includes(authUserId)) {
+		ids.push(authUserId);
 	}
-
-	await connectDB();
-	await ProfileFamily.updateOne(
-		{ familyId },
-		{
-			$pull: {
-				profiles: { authUserId }
-			}
-		}
-	);
-
-	// Clear familyId from the removed user so they can no longer
-	// switch to other profiles in this family.
-	await User.updateOne({ authUserId, familyId }, { $unset: { familyId: '' } });
+	setLinkedProfiles(event, ids);
+	return ids;
 }
 
 /**
- * Resolve family ID from a session user ID.
- * @param {string} sessionUserId
- * @returns {Promise<string | null>}
+ * Remove an authUserId from the linked_profiles cookie.
+ * @param {import('@sveltejs/kit').RequestEvent} event
+ * @param {string} authUserId
+ * @returns {string[]} The updated list
  */
-export async function resolveFamilyId(sessionUserId) {
-	if (!sessionUserId) {
-		return null;
-	}
-
-	await connectDB();
-	const user = await User.findOne({ authUserId: sessionUserId }).select('familyId').lean();
-	return user?.familyId || null;
+export function removeLinkedProfile(event, authUserId) {
+	const ids = getLinkedProfiles(event).filter((id) => id !== authUserId);
+	setLinkedProfiles(event, ids);
+	return ids;
 }
 
 /**
- * Move the current session user into an existing family, linking their profile.
- * Used when "Add Account" OAuth flow lands a new user — we retroactively link
- * them to the family of the account that initiated the add.
- * @param {string} sessionAuthUserId — the current session user (the new account)
- * @param {string} targetFamilyId — the family to join
- * @returns {Promise<{ success: boolean, familyId: string }>}
+ * Ensure a linked_profiles cookie exists for the current session user.
+ * If no cookie exists, creates one with just the current user.
+ * @param {import('@sveltejs/kit').RequestEvent} event
+ * @param {string} sessionAuthUserId
+ * @returns {string[]} The profile list
  */
-export async function linkUserToFamily(sessionAuthUserId, targetFamilyId) {
-	if (!sessionAuthUserId || !targetFamilyId) {
-		return { success: false, familyId: '' };
+export function ensureLinkedProfilesCookie(event, sessionAuthUserId) {
+	const ids = getLinkedProfiles(event);
+	if (ids.length === 0) {
+		setLinkedProfiles(event, [sessionAuthUserId]);
+		return [sessionAuthUserId];
 	}
+	if (!ids.includes(sessionAuthUserId)) {
+		ids.push(sessionAuthUserId);
+		setLinkedProfiles(event, ids);
+	}
+	return ids;
+}
+
+/**
+ * Fetch full profile details for all authUserIds in the linked_profiles cookie.
+ * @param {string[]} authUserIds
+ * @returns {Promise<ProfileEntry[]>}
+ */
+export async function getProfilesForIds(authUserIds) {
+	if (!authUserIds.length) return [];
 
 	await connectDB();
+	const users = await User.find({ authUserId: { $in: authUserIds } })
+		.select('authUserId email name picture provider')
+		.lean();
 
-	// Get the current user to update their familyId
-	const user = await User.findOne({ authUserId: sessionAuthUserId }).lean();
-	if (!user) {
-		return { success: false, familyId: '' };
-	}
-
-	// If user is already in this family, nothing to do
-	if (user.familyId === targetFamilyId) {
-		return { success: true, familyId: targetFamilyId };
-	}
-
-	// Check the target family exists
-	const targetFamily = await ProfileFamily.findOne({ familyId: targetFamilyId }).lean();
-	if (!targetFamily) {
-		return { success: false, familyId: '' };
-	}
-
-	// If the user was in a different family, remove them from it
-	if (user.familyId && user.familyId !== targetFamilyId) {
-		await ProfileFamily.updateOne(
-			{ familyId: user.familyId },
-			{ $pull: { profiles: { authUserId: sessionAuthUserId } } }
-		);
-	}
-
-	// Update user's familyId
-	await User.updateOne({ authUserId: sessionAuthUserId }, { $set: { familyId: targetFamilyId } });
-
-	// Add/update profile in target family
-	const now = new Date();
-	await ProfileFamily.updateOne(
-		{ familyId: targetFamilyId, 'profiles.authUserId': sessionAuthUserId },
-		{ $set: { 'profiles.$.lastUsed': now } }
-	);
-
-	if (
-		(await ProfileFamily.countDocuments({ familyId: targetFamilyId, 'profiles.authUserId': sessionAuthUserId })) ===
-		0
-	) {
-		await ProfileFamily.updateOne(
-			{ familyId: targetFamilyId },
-			{
-				$addToSet: {
-					profiles: {
-						authUserId: sessionAuthUserId,
-						email: user.email || '',
-						name: user.name || '',
-						picture: user.picture || '',
-						provider: user.provider || 'google',
-						lastUsed: now
-					}
-				}
-			}
-		);
-	}
-
-	return { success: true, familyId: targetFamilyId };
+	return users.map((u) => ({
+		authUserId: u.authUserId,
+		email: u.email || '',
+		name: u.name || '',
+		picture: u.picture || '',
+		provider: u.provider || 'google',
+		lastUsed: u.lastLoginAt?.toISOString?.() || ''
+	}));
 }

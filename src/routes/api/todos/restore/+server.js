@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { batchRestore } from '$lib/server/todoService.js';
 
-
 /**
  * POST /api/todos/restore — Batch restore archived todos.
  * Requires authentication.

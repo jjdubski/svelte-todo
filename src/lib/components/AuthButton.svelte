@@ -80,7 +80,7 @@
 			</div>
 		{/if}
 	</div>
-{:else if auth.isGuest}
+{:else}
 	<a
 		href={resolve('/')}
 		class="rounded-lg px-3 py-1.5 text-xs font-medium no-underline transition-all sm:text-base"

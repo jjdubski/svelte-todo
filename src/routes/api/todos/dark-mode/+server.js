@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { updateDarkMode } from '$lib/server/todoService.js';
 
-
 /**
  * PATCH /api/todos/dark-mode — Update the user's dark mode preference.
  * Requires authentication. Called when the user toggles dark mode.

@@ -24,7 +24,6 @@ vi.mock('../server/models/User.js', () => ({
 
 // Import after mocks are set up
 import {
-	getUserData,
 	upsertUser,
 	getTodos,
 	getSettings,
@@ -79,40 +78,6 @@ function createMockUser(overrides = {}) {
 describe('todoService', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-	});
-
-	describe('getUserData', () => {
-		it('returns user data when user exists', async () => {
-			const mockUser = createMockUser();
-			mockFindOne.mockResolvedValue(mockUser);
-
-			const result = await getUserData('test-user-id');
-
-			expect(mockFindOne).toHaveBeenCalledWith({ authUserId: 'test-user-id' });
-			expect(mockUser.save).toHaveBeenCalled();
-			expect(result.authUserId).toBe('test-user-id');
-		});
-
-		it('creates user if not found', async () => {
-			mockFindOne.mockResolvedValueOnce(null);
-			const newUser = createMockUser({ todos: [] });
-			mockCreate.mockResolvedValue(newUser);
-
-			await getUserData('new-user');
-
-			expect(mockCreate).toHaveBeenCalledWith({ authUserId: 'new-user' });
-			expect(newUser.save).toHaveBeenCalled();
-		});
-
-		it('updates lastLoginAt on each call', async () => {
-			const mockUser = createMockUser();
-			mockFindOne.mockResolvedValue(mockUser);
-
-			await getUserData('test-user-id');
-
-			expect(mockUser.lastLoginAt).toBeInstanceOf(Date);
-			expect(mockUser.save).toHaveBeenCalled();
-		});
 	});
 
 	describe('upsertUser', () => {

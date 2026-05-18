@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { upsertUser, migrateGuestData } from '$lib/server/todoService.js';
 
-
 /**
  * POST /api/todos/migrate — Import guest localStorage data into the user's account.
  * Requires authentication. Called after a guest user signs in.

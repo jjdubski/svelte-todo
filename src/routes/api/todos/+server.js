@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { getTodos, createTodo } from '$lib/server/todoService.js';
 
-
 /**
  * GET /api/todos — Fetch all user data (todos, archived, settings).
  * Requires authentication.

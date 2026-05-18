@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { updateTodo, archiveTodo } from '$lib/server/todoService.js';
 
-
 /**
  * PUT /api/todos/[id] — Update a todo.
  * Requires authentication.

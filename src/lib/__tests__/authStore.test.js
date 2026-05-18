@@ -44,7 +44,6 @@ describe('AuthStore', () => {
 
 	describe('constructor / _init', () => {
 		it('sets isLoading to true initially and resolves', async () => {
-			// Mock fetch to simulate no session
 			vi.mocked(fetch).mockResolvedValue({
 				ok: false,
 				json: async () => ({})
@@ -53,14 +52,12 @@ describe('AuthStore', () => {
 			const auth = new AuthStore();
 			expect(auth.isLoading).toBe(true);
 
-			// Wait for _fetchSession to resolve
 			await vi.waitFor(() => {
 				expect(auth.isLoading).toBe(false);
 			});
 		});
 
 		it('falls back to guest mode when session fetch fails and authMode was guest', async () => {
-			// Set up localStorage with guest mode BEFORE creating the store
 			vi.unstubAllGlobals();
 			const mockStore = { authMode: JSON.stringify('guest') };
 			vi.stubGlobal('localStorage', createMockLocalStorage(mockStore));
@@ -74,9 +71,7 @@ describe('AuthStore', () => {
 				expect(auth.isLoading).toBe(false);
 			});
 
-			// Session fetch was attempted even though authMode was 'guest'
 			expect(fetch).toHaveBeenCalledWith('/auth/session');
-			// Falls back to guest mode when no session
 			expect(auth.isGuest).toBe(true);
 		});
 
@@ -86,15 +81,17 @@ describe('AuthStore', () => {
 			vi.stubGlobal('localStorage', createMockLocalStorage(mockStore));
 			vi.stubGlobal(
 				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: async () => ({
-						user: {
-							authUserId: 'google-123',
-							email: 'test@example.com',
-							name: 'Test User'
-						}
-					})
+				vi.fn().mockImplementation((url) => {
+					if (url === '/auth/session') {
+						return Promise.resolve({
+							ok: true,
+							json: async () => ({
+								user: { authUserId: 'google-123', email: 'test@example.com', name: 'Test User' }
+							})
+						});
+					}
+					// /api/profiles/ensure
+					return Promise.resolve({ ok: true, json: async () => ({}) });
 				})
 			);
 			vi.stubGlobal('window', { location: { href: '' } });
@@ -105,10 +102,8 @@ describe('AuthStore', () => {
 				expect(auth.isLoading).toBe(false);
 			});
 
-			// User is logged in, not guest
 			expect(auth.isLoggedIn).toBe(true);
 			expect(auth.isGuest).toBe(false);
-			// authMode is NOT cleared here — it's left for the migration dialog to handle
 			expect(localStorage.getItem('authMode')).toBe(JSON.stringify('guest'));
 		});
 
@@ -120,9 +115,11 @@ describe('AuthStore', () => {
 				picture: 'https://example.com/pic.jpg'
 			};
 
-			vi.mocked(fetch).mockResolvedValue({
-				ok: true,
-				json: async () => ({ user: mockUser })
+			vi.mocked(fetch).mockImplementation((url) => {
+				if (url === '/auth/session') {
+					return Promise.resolve({ ok: true, json: async () => ({ user: mockUser }) });
+				}
+				return Promise.resolve({ ok: true, json: async () => ({}) });
 			});
 
 			const auth = new AuthStore();
@@ -169,8 +166,6 @@ describe('AuthStore', () => {
 	describe('continueAsGuest', () => {
 		it('sets authMode in localStorage and redirects to /tasks', () => {
 			const auth = new AuthStore();
-
-			// Reset loading to true for this test
 			auth.isLoading = true;
 			auth.isGuest = false;
 
@@ -183,17 +178,17 @@ describe('AuthStore', () => {
 	});
 
 	describe('clearGuestMode', () => {
-		it('removes authMode from localStorage and sets isGuest to false', () => {
+		it('removes authMode and pending flags from localStorage and sets isGuest to false', () => {
 			const auth = new AuthStore();
-
-			// Set up guest-like state
 			auth.isGuest = true;
 			localStorage.setItem('authMode', JSON.stringify('guest'));
+			localStorage.setItem('_pendingProfileAction', JSON.stringify('add'));
 
 			auth.clearGuestMode();
 
 			expect(auth.isGuest).toBe(false);
 			expect(localStorage.getItem('authMode')).toBeNull();
+			expect(localStorage.getItem('_pendingProfileAction')).toBeNull();
 		});
 	});
 
@@ -204,18 +199,19 @@ describe('AuthStore', () => {
 
 			await auth.login('google');
 
-			// The mock from vi.mock is hoisted, so signIn is already mocked
 			const { signIn } = await import('@auth/sveltekit/client');
 			expect(signIn).toHaveBeenCalledWith('google', { callbackUrl: '/tasks' });
 		});
 
-		it('logout dynamically imports and calls signOut', async () => {
+		it('logout clears pending flags and calls signOut', async () => {
 			const auth = new AuthStore();
+			localStorage.setItem('_pendingProfileAction', JSON.stringify('add'));
 
 			await auth.logout();
 
 			const { signOut } = await import('@auth/sveltekit/client');
 			expect(signOut).toHaveBeenCalledWith({ callbackUrl: '/' });
+			expect(localStorage.getItem('_pendingProfileAction')).toBeNull();
 		});
 	});
 
@@ -224,49 +220,50 @@ describe('AuthStore', () => {
 	// ---------------------------------------------------------------------------
 
 	describe('switchToProfile', () => {
-		it('calls signIn with account-switch provider with redirect:false', async () => {
+		it('calls /api/profiles POST with targetAuthUserId', async () => {
 			const auth = new AuthStore();
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
-			auth.user = {
-				authUserId: 'google-current',
-				email: 'current@example.com',
-				familyId: 'family-123'
-			};
+			auth.user = { authUserId: 'google-current', email: 'current@example.com' };
 
-			const { signIn } = await import('@auth/sveltekit/client');
-			vi.mocked(signIn).mockResolvedValue({ ok: true });
+			vi.mocked(fetch).mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ success: true })
+			});
+			vi.mocked(fetch).mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ user: { ...auth.user, authUserId: 'google-target' } })
+			});
 
 			await auth.switchToProfile('google-target');
 
-			expect(signIn).toHaveBeenCalledWith('account-switch', {
-				targetAuthUserId: 'google-target',
-				familyId: 'family-123',
-				redirect: false
+			expect(fetch).toHaveBeenCalledWith('/api/profiles', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					targetAuthUserId: 'google-target',
+					callbackUrl: window.location.pathname
+				})
 			});
 		});
 
 		it('re-fetches session and calls reloadTodos callback on successful switch', async () => {
 			const auth = new AuthStore();
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
-			auth.user = {
-				authUserId: 'google-current',
-				email: 'current@example.com',
-				familyId: 'family-123'
-			};
+			auth.user = { authUserId: 'google-current', email: 'current@example.com' };
 
 			const reloadTodos = vi.fn().mockResolvedValue(undefined);
 			auth.setReloadTodos(reloadTodos);
 
-			const { signIn } = await import('@auth/sveltekit/client');
-			vi.mocked(signIn).mockResolvedValue({ ok: true });
-
 			const switchedUser = {
 				authUserId: 'google-target',
 				email: 'target@example.com',
-				name: 'Target User',
-				familyId: 'family-123'
+				name: 'Target User'
 			};
 
+			vi.mocked(fetch).mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ success: true })
+			});
 			vi.mocked(fetch).mockResolvedValueOnce({
 				ok: true,
 				json: async () => ({ user: switchedUser })
@@ -274,55 +271,46 @@ describe('AuthStore', () => {
 
 			await auth.switchToProfile('google-target');
 
-			// Session was re-fetched
 			expect(fetch).toHaveBeenCalledWith('/auth/session');
 			expect(auth.user).toEqual(switchedUser);
-
-			// reloadTodos callback was called
 			expect(reloadTodos).toHaveBeenCalledOnce();
 		});
 
-		it('returns early when no authUserId provided', async () => {
-			const auth = new AuthStore();
-			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
-			auth.user = { authUserId: 'google-current', familyId: 'family-123' };
-
-			const { signIn } = await import('@auth/sveltekit/client');
-			vi.mocked(signIn).mockClear();
-
-			await auth.switchToProfile('');
-
-			expect(signIn).not.toHaveBeenCalled();
-		});
-
-		it('returns early when user has no familyId', async () => {
+		it('returns early when no targetAuthUserId provided', async () => {
 			const auth = new AuthStore();
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
 			auth.user = { authUserId: 'google-current' };
 
-			const { signIn } = await import('@auth/sveltekit/client');
-			vi.mocked(signIn).mockClear();
+			vi.mocked(fetch).mockClear();
+			await auth.switchToProfile('');
 
-			await auth.switchToProfile('google-target');
-
-			expect(signIn).not.toHaveBeenCalled();
+			expect(fetch).not.toHaveBeenCalledWith('/api/profiles', expect.anything());
 		});
 
-		it('does not update session when signIn fails', async () => {
+		it('returns early when current user is missing', async () => {
 			const auth = new AuthStore();
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
-			auth.user = {
-				authUserId: 'google-current',
-				email: 'current@example.com',
-				familyId: 'family-123'
-			};
+			auth.user = null;
 
-			const { signIn } = await import('@auth/sveltekit/client');
-			vi.mocked(signIn).mockResolvedValue({ ok: false, error: 'Access denied' });
+			vi.mocked(fetch).mockClear();
+			await auth.switchToProfile('google-target');
+
+			expect(fetch).not.toHaveBeenCalledWith('/api/profiles', expect.anything());
+		});
+
+		it('does not update session when /api/profiles switch fails', async () => {
+			const auth = new AuthStore();
+			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
+			auth.user = { authUserId: 'google-current', email: 'current@example.com' };
+
+			vi.mocked(fetch).mockResolvedValueOnce({
+				ok: false,
+				status: 400,
+				json: async () => ({ success: false, error: 'Switch failed' })
+			});
 
 			await auth.switchToProfile('google-target');
 
-			// User should remain unchanged since signIn failed
 			expect(auth.user?.authUserId).toBe('google-current');
 		});
 	});
@@ -333,82 +321,56 @@ describe('AuthStore', () => {
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
 			auth.user = { authUserId: 'google-current', email: 'current@example.com' };
 
-			const { signIn, signOut } = await import('@auth/sveltekit/client');
+			const { signIn } = await import('@auth/sveltekit/client');
 			vi.mocked(signIn).mockClear();
-			vi.mocked(signOut).mockClear();
 
 			await auth.addNewProfile();
 
 			expect(storageGet('_pendingProfileAction')).toBe('add');
 		});
 
-		it('saves _pendingProfileFamilyId when user has familyId', async () => {
-			const auth = new AuthStore();
-			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
-			auth.user = { authUserId: 'google-current', email: 'current@example.com', familyId: 'family-123' };
-
-			const { signIn, signOut } = await import('@auth/sveltekit/client');
-			vi.mocked(signIn).mockClear();
-			vi.mocked(signOut).mockClear();
-
-			await auth.addNewProfile();
-
-			expect(storageGet('_pendingProfileFamilyId')).toBe('family-123');
-		});
-
-		it('does not save _pendingProfileFamilyId when user has no familyId', async () => {
+		it('clears _pendingProfileAction on error', async () => {
 			const auth = new AuthStore();
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
 			auth.user = { authUserId: 'google-current', email: 'current@example.com' };
 
-			const { signIn, signOut } = await import('@auth/sveltekit/client');
-			vi.mocked(signIn).mockClear();
-			vi.mocked(signOut).mockClear();
+			const { signIn } = await import('@auth/sveltekit/client');
+			vi.mocked(signIn).mockRejectedValue(new Error('Sign in failed'));
 
 			await auth.addNewProfile();
 
-			expect(storageGet('_pendingProfileFamilyId')).toBeNull();
+			expect(storageGet('_pendingProfileAction')).toBeNull();
 		});
 
-		it('calls signOut then signIn without login_hint', async () => {
+		it('calls signIn with google provider', async () => {
 			const auth = new AuthStore();
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
 			auth.user = { authUserId: 'google-current', email: 'current@example.com' };
 
-			const { signIn, signOut } = await import('@auth/sveltekit/client');
+			const { signIn } = await import('@auth/sveltekit/client');
 			vi.mocked(signIn).mockClear();
-			vi.mocked(signOut).mockClear();
-
-			const callOrder = [];
-			vi.mocked(signOut).mockImplementation(() => { callOrder.push('signOut'); });
-			vi.mocked(signIn).mockImplementation(() => { callOrder.push('signIn'); });
 
 			await auth.addNewProfile();
 
-			expect(signOut).toHaveBeenCalledWith({ redirect: false });
 			expect(signIn).toHaveBeenCalledWith('google', { callbackUrl: '/profiles' });
-			expect(callOrder).toEqual(['signOut', 'signIn']);
 		});
 	});
 
 	describe('switchToGuest', () => {
-		it('sets authMode to guest, signs out, and redirects to /tasks', async () => {
+		it('sets authMode to guest, signs out, clears pending flags, and redirects', async () => {
 			const auth = new AuthStore();
 			await vi.waitFor(() => expect(auth.isLoading).toBe(false));
 			auth.user = { authUserId: 'google-current', email: 'current@example.com' };
+			localStorage.setItem('_pendingProfileAction', JSON.stringify('add'));
 
 			const { signOut } = await import('@auth/sveltekit/client');
 			vi.mocked(signOut).mockClear();
 
 			await auth.switchToGuest();
 
-			// authMode set to guest
 			expect(storageGet('authMode')).toBe('guest');
-
-			// signOut called
+			expect(storageGet('_pendingProfileAction')).toBeNull();
 			expect(signOut).toHaveBeenCalledWith({ redirect: false });
-
-			// Redirect
 			expect(window.location.href).toBe('/tasks');
 		});
 	});
@@ -490,7 +452,6 @@ describe('AuthStore', () => {
 
 			vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
 
-			// Should not throw
 			await expect(auth.removeSavedProfile('google-222')).resolves.toBeUndefined();
 		});
 
@@ -504,7 +465,6 @@ describe('AuthStore', () => {
 				json: async () => ({})
 			});
 
-			// Should not throw when API returns non-ok
 			await expect(auth.removeSavedProfile('nonexistent')).resolves.toBeUndefined();
 		});
 	});

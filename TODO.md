@@ -7,3 +7,6 @@
     To fix this issue, use unique id attribute values for each form field.
 - Fix bug:
   - User logs in to google account, signs out and switches to guest, then logs back in: The prompt to sync data appears (even though there was no new data) and everything gets duplicated if I click 'Sync' button.
+- Change the way notifactions work on mobile
+- Expirement with updating apple-touch-icon to match color instead of just using maskable dark theme update
+- This week and today breakdown

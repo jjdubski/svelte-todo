@@ -264,15 +264,11 @@ describe('storage', () => {
 	describe('clearGuestData', () => {
 		it('removes all auth and todo keys', () => {
 			mockStore['authMode'] = JSON.stringify('guest');
-			mockStore['_localDataSynced'] = JSON.stringify(true);
+			mockStore['_pendingProfileAction'] = JSON.stringify('add');
 			mockStore['todos'] = JSON.stringify([{ id: 1, title: 'Test' }]);
 			mockStore['archivedTodos'] = JSON.stringify([]);
-			mockStore['categories'] = JSON.stringify(['Work']);
-			mockStore['categoryColors'] = JSON.stringify({});
-			mockStore['availableTags'] = JSON.stringify([]);
 			mockStore['customTags'] = JSON.stringify([]);
 			mockStore['tagColors'] = JSON.stringify({});
-			mockStore['templates'] = JSON.stringify([]);
 			mockStore['darkMode'] = JSON.stringify(false);
 			mockStore['themePreset'] = JSON.stringify('forest');
 			mockStore['accentColor'] = JSON.stringify('#22c55e');
@@ -284,27 +280,15 @@ describe('storage', () => {
 			mockStore['dueDateRemindersEnabled'] = JSON.stringify(true);
 			mockStore['remindOverdueTasks'] = JSON.stringify(false);
 			mockStore['remindTodayTasks'] = JSON.stringify(true);
-			mockStore['filterText'] = JSON.stringify('');
-			mockStore['filterStatus'] = JSON.stringify('all');
-			mockStore['filterCategory'] = JSON.stringify('');
-			mockStore['sortBy'] = JSON.stringify('manual');
-			mockStore['filterTags'] = JSON.stringify([]);
-			mockStore['filterPriority'] = JSON.stringify('all');
-			mockStore['filterDateFrom'] = JSON.stringify('');
-			mockStore['filterDateTo'] = JSON.stringify('');
 
 			clearGuestData();
 
 			expect(mockStore['authMode']).toBeUndefined();
-			expect(mockStore['_localDataSynced']).toBeUndefined();
+			expect(mockStore['_pendingProfileAction']).toBeUndefined();
 			expect(mockStore['todos']).toBeUndefined();
 			expect(mockStore['archivedTodos']).toBeUndefined();
-			expect(mockStore['categories']).toBeUndefined();
-			expect(mockStore['categoryColors']).toBeUndefined();
-			expect(mockStore['availableTags']).toBeUndefined();
 			expect(mockStore['customTags']).toBeUndefined();
 			expect(mockStore['tagColors']).toBeUndefined();
-			expect(mockStore['templates']).toBeUndefined();
 			expect(mockStore['darkMode']).toBeUndefined();
 			expect(mockStore['themePreset']).toBeUndefined();
 			expect(mockStore['accentColor']).toBeUndefined();
@@ -316,14 +300,6 @@ describe('storage', () => {
 			expect(mockStore['dueDateRemindersEnabled']).toBeUndefined();
 			expect(mockStore['remindOverdueTasks']).toBeUndefined();
 			expect(mockStore['remindTodayTasks']).toBeUndefined();
-			expect(mockStore['filterText']).toBeUndefined();
-			expect(mockStore['filterStatus']).toBeUndefined();
-			expect(mockStore['filterCategory']).toBeUndefined();
-			expect(mockStore['sortBy']).toBeUndefined();
-			expect(mockStore['filterTags']).toBeUndefined();
-			expect(mockStore['filterPriority']).toBeUndefined();
-			expect(mockStore['filterDateFrom']).toBeUndefined();
-			expect(mockStore['filterDateTo']).toBeUndefined();
 		});
 
 		it('does not throw when localStorage.removeItem throws', () => {

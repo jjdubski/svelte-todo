@@ -90,15 +90,11 @@ export function getGuestData() {
 export function clearGuestData() {
 	try {
 		localStorage.removeItem('authMode');
-		localStorage.removeItem('_localDataSynced');
+		localStorage.removeItem('_pendingProfileAction');
 		localStorage.removeItem('todos');
 		localStorage.removeItem('archivedTodos');
-		localStorage.removeItem('categories');
-		localStorage.removeItem('categoryColors');
-		localStorage.removeItem('availableTags');
 		localStorage.removeItem('customTags');
 		localStorage.removeItem('tagColors');
-		localStorage.removeItem('templates');
 		localStorage.removeItem('darkMode');
 		localStorage.removeItem('themePreset');
 		localStorage.removeItem('accentColor');
@@ -110,14 +106,6 @@ export function clearGuestData() {
 		localStorage.removeItem('dueDateRemindersEnabled');
 		localStorage.removeItem('remindOverdueTasks');
 		localStorage.removeItem('remindTodayTasks');
-		localStorage.removeItem('filterText');
-		localStorage.removeItem('filterStatus');
-		localStorage.removeItem('filterCategory');
-		localStorage.removeItem('sortBy');
-		localStorage.removeItem('filterTags');
-		localStorage.removeItem('filterPriority');
-		localStorage.removeItem('filterDateFrom');
-		localStorage.removeItem('filterDateTo');
 	} catch {
 		// ignore
 	}

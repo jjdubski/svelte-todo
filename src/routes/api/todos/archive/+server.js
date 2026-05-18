@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { batchArchive } from '$lib/server/todoService.js';
 
-
 /**
  * POST /api/todos/archive — Batch archive todos.
  * Requires authentication.

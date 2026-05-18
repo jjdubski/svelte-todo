@@ -1,5 +1,7 @@
 <script>
 	import { User, X } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { getAuthStore } from '$lib/state/authStore.svelte.js';
 
 	const auth = getAuthStore();
@@ -59,6 +61,10 @@
 	}
 
 	$effect(() => {
+		// Re-load when auth loading finishes OR when profile linking/removal
+		// explicitly signals a profile list change.
+		const _profilesVersion = auth.profilesVersion;
+		void _profilesVersion;
 		if (!auth.isLoading) {
 			loadSavedProfiles();
 		}
@@ -113,7 +119,12 @@
 
 	async function handleSwitchProfile(authUserId) {
 		if (!authUserId) return;
+		console.debug('[debug-switch][ProfileSwitcher] switch button clicked', {
+			targetAuthUserId: authUserId,
+			currentAuthUserId: auth.user?.authUserId || null
+		});
 		await auth.switchToProfile(authUserId);
+		await goto(resolve('/tasks'));
 	}
 
 	async function handleAddAccount() {
@@ -156,36 +167,64 @@
 {/snippet}
 
 {#if auth.isLoading}
-	<div class="flex w-full max-w-md items-center justify-center rounded-2xl border p-8" style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);">
-		<div class="h-10 w-10 animate-spin rounded-full border-4 border-t-transparent" style="border-color: var(--border); border-top-color: var(--btn-primary);"></div>
+	<div
+		class="flex w-full max-w-md items-center justify-center rounded-2xl border p-8"
+		style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);"
+	>
+		<div
+			class="h-10 w-10 animate-spin rounded-full border-4 border-t-transparent"
+			style="border-color: var(--border); border-top-color: var(--btn-primary);"
+		></div>
 	</div>
 {:else if profilesError}
-	<div class="w-full max-w-md rounded-2xl border p-6" style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);">
+	<div
+		class="w-full max-w-md rounded-2xl border p-6"
+		style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);"
+	>
 		<h1 class="text-xl font-bold" style="color: var(--text-heading);">Profile Error</h1>
 		<p class="mt-2 text-sm" style="color: var(--text-secondary);">{profilesError}</p>
-		<button type="button" class="mt-4 cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-white" style="background: var(--btn-primary);" onclick={loadSavedProfiles}>
+		<button
+			type="button"
+			class="mt-4 cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-white"
+			style="background: var(--btn-primary);"
+			onclick={loadSavedProfiles}
+		>
 			Try again
 		</button>
 	</div>
 {:else if showPrimarySignIn}
-	<div class="w-full max-w-md rounded-2xl border p-6" style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);">
+	<div
+		class="w-full max-w-md rounded-2xl border p-6"
+		style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);"
+	>
 		<h1 class="text-xl font-bold" style="color: var(--text-heading);">Sign in to get started</h1>
 		<p class="mt-2 text-sm" style="color: var(--text-secondary);">No saved profiles were found on this device.</p>
 
-		<button type="button" onclick={handleAddAccount} class="mt-5 flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:shadow-md" style="background: #ffffff; border-color: #dadce0; color: #1f2937;">
+		<button
+			type="button"
+			onclick={handleAddAccount}
+			class="mt-5 flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:shadow-md"
+			style="background: #ffffff; border-color: #dadce0; color: #1f2937;"
+		>
 			{@render googleIcon()}
 			Sign in with Google
 		</button>
 	</div>
 {:else}
-	<div class="w-full max-w-md rounded-2xl border p-5" style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);">
+	<div
+		class="w-full max-w-md rounded-2xl border p-5"
+		style="background: var(--card-bg); border-color: var(--border); box-shadow: 0 8px 32px var(--shadow);"
+	>
 		<h1 class="text-xl font-bold" style="color: var(--text-heading);">Switch profile</h1>
 		<p class="mt-1 text-sm" style="color: var(--text-secondary);">Choose an account for this device.</p>
 
 		<div class="mt-4 space-y-2">
 			{#each profiles as profile (profile.authUserId)}
 				{@const isActive = auth.user?.authUserId === profile.authUserId}
-				<div class="profile-row flex items-center gap-2 rounded-xl border p-2" style="background: var(--input-bg); border-color: var(--border);">
+				<div
+					class="profile-row flex items-center gap-2 rounded-xl border p-2"
+					style="background: var(--input-bg); border-color: var(--border);"
+				>
 					<button
 						type="button"
 						onclick={() => handleSwitchProfile(profile.authUserId)}
@@ -204,16 +243,24 @@
 						{/if}
 
 						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-semibold" style="color: var(--text);">{profile.name || 'Google Account'}</p>
+							<p class="truncate text-sm font-semibold" style="color: var(--text);">
+								{profile.name || 'Google Account'}
+							</p>
 							<p class="truncate text-xs" style="color: var(--text-secondary);">{profile.email}</p>
 						</div>
 
 						{#if isActive}
-							<span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background: var(--card-bg); color: var(--text-secondary);">
+							<span
+								class="rounded-full px-2 py-0.5 text-xs font-medium"
+								style="background: var(--card-bg); color: var(--text-secondary);"
+							>
 								Active
 							</span>
 						{:else}
-							<span class="rounded-full px-2 py-0.5 text-xs font-medium text-white" style="background: var(--btn-primary);">
+							<span
+								class="rounded-full px-2 py-0.5 text-xs font-medium text-white"
+								style="background: var(--btn-primary);"
+							>
 								Switch
 							</span>
 						{/if}
@@ -234,7 +281,10 @@
 			{/each}
 
 			{#if showGuestCard}
-				<div class="profile-row flex items-center gap-2 rounded-xl border p-2" style="background: var(--input-bg); border-color: var(--border);">
+				<div
+					class="profile-row flex items-center gap-2 rounded-xl border p-2"
+					style="background: var(--input-bg); border-color: var(--border);"
+				>
 					<button
 						type="button"
 						onclick={handleSwitchToGuest}
@@ -253,11 +303,17 @@
 						</div>
 
 						{#if auth.isGuest}
-							<span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background: var(--card-bg); color: var(--text-secondary);">
+							<span
+								class="rounded-full px-2 py-0.5 text-xs font-medium"
+								style="background: var(--card-bg); color: var(--text-secondary);"
+							>
 								Active
 							</span>
 						{:else}
-							<span class="rounded-full px-2 py-0.5 text-xs font-medium text-white" style="background: var(--btn-primary);">
+							<span
+								class="rounded-full px-2 py-0.5 text-xs font-medium text-white"
+								style="background: var(--btn-primary);"
+							>
 								Switch
 							</span>
 						{/if}
@@ -268,14 +324,24 @@
 
 		{#if auth.isGuest}
 			<div class="mt-4 border-t pt-4" style="border-color: var(--border);">
-				<button type="button" onclick={handleAddAccount} class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:shadow-md" style="background: #ffffff; border-color: #dadce0; color: #1f2937;">
+				<button
+					type="button"
+					onclick={handleAddAccount}
+					class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:shadow-md"
+					style="background: #ffffff; border-color: #dadce0; color: #1f2937;"
+				>
 					{@render googleIcon()}
 					Sign in with Google
 				</button>
 			</div>
 		{:else}
 			<div class="mt-4 border-t pt-4" style="border-color: var(--border);">
-				<button type="button" onclick={handleAddAccount} class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:shadow-md" style="background: #ffffff; border-color: #dadce0; color: #1f2937;">
+				<button
+					type="button"
+					onclick={handleAddAccount}
+					class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all hover:shadow-md"
+					style="background: #ffffff; border-color: #dadce0; color: #1f2937;"
+				>
 					{@render googleIcon()}
 					Add another Google account
 				</button>
@@ -286,7 +352,9 @@
 
 <style>
 	.profile-row {
-		transition: border-color 0.2s ease, background 0.2s ease;
+		transition:
+			border-color 0.2s ease,
+			background 0.2s ease;
 	}
 
 	.profile-row:hover {

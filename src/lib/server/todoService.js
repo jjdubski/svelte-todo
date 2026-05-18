@@ -45,23 +45,6 @@ function _mergeSettings(base, incoming) {
 }
 
 /**
- * Get or create a user document, return full user data as a plain object.
- * Updates lastLoginAt on each call.
- * @param {string} authUserId
- * @returns {Promise<Record<string, any>>}
- */
-export async function getUserData(authUserId) {
-	await connectDB();
-	let user = await User.findOne({ authUserId });
-	if (!user) {
-		user = await User.create({ authUserId });
-	}
-	user.lastLoginAt = new Date();
-	await user.save();
-	return user.toObject();
-}
-
-/**
  * Update or create user on first login (from Auth.js callback).
  * Used by the Auth.js session callback to sync profile data.
  * @param {string} authUserId

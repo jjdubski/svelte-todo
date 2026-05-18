@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { getSettings, updateSettings } from '$lib/server/todoService.js';
 
-
 /**
  * GET /api/todos/settings — Fetch user settings payload.
  * Requires authentication.

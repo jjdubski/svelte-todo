@@ -7,8 +7,6 @@ import Credentials from '@auth/core/providers/credentials';
 import { upsertUser } from './todoService.js';
 import { connectDB } from './db.js';
 import { User } from './models/User.js';
-import { linkProfileToFamily } from './profileService.js';
-import { randomUUID } from 'node:crypto';
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AUTH_SECRET } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 
@@ -18,28 +16,16 @@ const APPLE_KEY_ID = env.APPLE_KEY_ID;
 const APPLE_PRIVATE_KEY = env.APPLE_PRIVATE_KEY;
 
 /**
- * @typedef {import('@auth/core/types').Session & { user: { authUserId?: string, provider?: string, familyId?: string } }} AuthSession
- * @typedef {import('@auth/core/types').JWT & { authUserId?: string, provider?: string, familyId?: string }} AuthJWT
+ * @typedef {import('@auth/core/types').Session & { user: { authUserId?: string, provider?: string } }} AuthSession
+ * @typedef {import('@auth/core/types').JWT & { authUserId?: string, provider?: string }} AuthJWT
  */
-
-/**
- * Parse a cookie value by name from a cookie header string.
- * @param {string | null} cookieHeader
- * @param {string} name
- * @returns {string | null}
- */
-function parseCookie(cookieHeader, name) {
-	if (!cookieHeader) return null;
-	const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-	return match ? decodeURIComponent(match[1]) : null;
-}
 
 /**
  * Auth.js configuration for SvelteKit.
  * Provides Google and Apple OAuth providers with JWT session strategy.
- * The upsertUser callback creates/updates the MongoDB user document on sign-in.
+ * Profile linking is managed via the `linked_profiles` HttpOnly cookie.
  */
-export const { handle, signIn, signOut } = SvelteKitAuth({
+export const { handle } = SvelteKitAuth({
 	providers: [
 		Google({
 			clientId: GOOGLE_CLIENT_ID,
@@ -59,28 +45,32 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			id: 'account-switch',
 			name: 'Account Switcher',
 			credentials: {
-				targetAuthUserId: { label: 'Target User ID', type: 'text' },
-				familyId: { label: 'Family ID', type: 'text' }
+				targetAuthUserId: { label: 'Target User ID', type: 'text' }
 			},
 			/**
-			 * Authorize a profile switch by verifying the target belongs to the
-			 * same family. The familyId comes from the client (known via session)
-			 * and is verified against the database to prevent unauthorized switches.
+			 * Authorize a profile switch. The calling endpoint (POST /api/profiles)
+			 * already verified the target is in the linked_profiles cookie — we just
+			 * resolve the user and return their profile to mint a new session.
 			 * @param {Record<string, string> | undefined} credentials
 			 * @returns {Promise<import('@auth/core/types').User | null>}
 			 */
 			async authorize(credentials) {
-				if (!credentials?.targetAuthUserId || !credentials?.familyId) return null;
+				if (!credentials?.targetAuthUserId) {
+					console.error('[auth] account-switch authorize missing targetAuthUserId');
+					return null;
+				}
 
 				await connectDB();
-				const user = await User.findOne({
-					authUserId: credentials.targetAuthUserId,
-					familyId: credentials.familyId
-				})
-					.select('authUserId name email picture familyId provider')
+				const user = await User.findOne({ authUserId: credentials.targetAuthUserId })
+					.select('authUserId name email picture provider')
 					.lean();
 
-				if (!user) return null;
+				if (!user) {
+					console.error('[auth] account-switch authorize user not found', {
+						targetAuthUserId: credentials.targetAuthUserId
+					});
+					return null;
+				}
 
 				return {
 					id: user.authUserId,
@@ -88,7 +78,6 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 					name: user.name || '',
 					email: user.email || '',
 					image: user.picture || '',
-					familyId: user.familyId,
 					provider: user.provider || 'google'
 				};
 			}
@@ -99,59 +88,23 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 	callbacks: {
 		/**
 		 * JWT callback — attach authUserId and provider to the token.
-		 * @param {{ token: AuthJWT, account: import('@auth/core/types').Account | null, profile?: import('@auth/core/types').Profile, user?: import('@auth/core/types').User & { authUserId?: string, familyId?: string, provider?: string }, request?: Request }} params
+		 * @param {{ token: AuthJWT, account: import('@auth/core/types').Account | null, profile?: import('@auth/core/types').Profile, user?: import('@auth/core/types').User & { authUserId?: string, provider?: string }, request?: Request }} params
 		 * @returns {Promise<AuthJWT>}
 		 */
-		async jwt({ token, account, profile, user, request }) {
+		async jwt({ token, account, user }) {
 			if (account) {
 				// OAuth provider sign-in (Google, Apple)
-				await connectDB();
-
 				token.authUserId = account.providerAccountId;
 				token.provider = account.provider;
-
-				// Determine familyId: check cookie first, then existing user, then generate
-				let familyId = request
-					? parseCookie(request.headers.get('cookie') || '', 'profile_family_id')
-					: null;
-
-				if (!familyId) {
-					const existingUser = await User.findOne({ authUserId: token.authUserId }).select('familyId').lean();
-					familyId = existingUser?.familyId;
-				}
-
-				if (!familyId) {
-					familyId = randomUUID();
-				}
-
-				token.familyId = familyId;
-
-				// Save familyId + tokens to User document
-				await User.updateOne(
-					{ authUserId: token.authUserId },
-					{
-						$set: {
-							familyId,
-							accessToken: account.access_token,
-							refreshToken: account.refresh_token
-						}
-					},
-					{ upsert: true }
-				);
-
-				// Link/add to ProfileFamily
-				await linkProfileToFamily(familyId, {
-					authUserId: token.authUserId,
-					email: profile?.email || '',
-					name: profile?.name || '',
-					picture: profile?.picture || '',
-					provider: account.provider || 'google'
-				});
 			} else if (user) {
-				// Credentials provider (account-switch) — trust authorize result
-				token.authUserId = user.authUserId;
-				token.familyId = user.familyId;
-				token.provider = user.provider || 'credentials';
+				// Credentials provider (account-switch).
+				const switchedAuthUserId = user.authUserId || user.id;
+				if (switchedAuthUserId) {
+					token.authUserId = switchedAuthUserId;
+					token.provider = user.provider || 'google';
+				} else {
+					console.error('[auth] account-switch jwt missing switchedAuthUserId on user payload', { user });
+				}
 			}
 			return token;
 		},
@@ -166,7 +119,6 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			if (session.user && token.authUserId) {
 				session.user.authUserId = token.authUserId;
 				session.user.provider = token.provider;
-				session.user.familyId = token.familyId;
 
 				// Upsert user document in MongoDB (create on first login, update on subsequent)
 				try {
@@ -179,7 +131,6 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 				} catch (err) {
 					const msg = /** @type {Error} */ (err).message || '';
 					console.error('[auth] Failed to upsert user:', msg);
-					// If this is a MongoDB connection issue, log the full error for debugging.
 					if (msg.includes('MongoDB') || msg.includes('connect')) {
 						console.error('[auth] Full error:', err);
 					}

@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
-import { resolveFamilyId, removeProfileFromFamily } from '$lib/server/profileService.js';
+import { getLinkedProfiles, setLinkedProfiles } from '$lib/server/profileService.js';
 
 /**
- * DELETE /api/profiles/[authUserId] — remove a profile from family.
+ * DELETE /api/profiles/[authUserId] — remove a profile from linked_profiles.
  * @param {import('@sveltejs/kit').RequestEvent} event
  * @returns {Promise<Response>}
  */
@@ -16,9 +16,13 @@ export async function DELETE(event) {
 	// Prevent removing yourself
 	if (targetAuthUserId === session.user.authUserId) return new Response(null, { status: 400 });
 
-	const familyId = await resolveFamilyId(session.user.authUserId);
-	if (!familyId) return new Response(null, { status: 404 });
+	const ids = getLinkedProfiles(event);
+	const updated = ids.filter((id) => id !== targetAuthUserId);
 
-	await removeProfileFromFamily(familyId, targetAuthUserId);
+	if (updated.length === ids.length) {
+		return json({ success: false, error: 'Profile not found in linked list' }, { status: 404 });
+	}
+
+	setLinkedProfiles(event, updated);
 	return json({ success: true });
 }

@@ -1,7 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { permanentDeleteTodo } from '$lib/server/todoService.js';
 
-
 /**
  * POST /api/todos/permanent-delete — Permanently delete an archived todo.
  * Requires authentication.

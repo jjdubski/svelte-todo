@@ -233,6 +233,8 @@ class ThemeStore {
 	/** @type {import('./authStore.svelte.js').AuthStore|null} */
 	_auth = null;
 	_hasLoadedServerSettings = $state(false);
+	/** @type {string | null} */
+	_lastLoadedAuthUserId = null;
 	_isHydratingFromServer = false;
 	_applyFrame = 0;
 
@@ -249,11 +251,19 @@ class ThemeStore {
 
 		$effect(() => {
 			const isLoggedIn = this._auth?.isLoggedIn || false;
+			const currentAuthUserId = this._auth?.user?.authUserId || null;
+
+			// Detect profile switch — reset so we reload settings for the new user
+			if (isLoggedIn && currentAuthUserId && currentAuthUserId !== this._lastLoadedAuthUserId) {
+				this._hasLoadedServerSettings = false;
+			}
+
 			if (isLoggedIn && !this._hasLoadedServerSettings) {
 				this._loadFromServerSettings();
 			}
 			if (!isLoggedIn && this._hasLoadedServerSettings) {
 				this._hasLoadedServerSettings = false;
+				this._lastLoadedAuthUserId = null;
 			}
 		});
 
@@ -548,6 +558,7 @@ class ThemeStore {
 		} finally {
 			this._isHydratingFromServer = false;
 			this._hasLoadedServerSettings = true;
+			this._lastLoadedAuthUserId = this._auth?.user?.authUserId || null;
 		}
 	}
 

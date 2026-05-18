@@ -55,19 +55,44 @@
 		if (!_authStore.isLoading && _authStore.isLoggedIn && !_authStore.isGuest) {
 			const pendingAction = storageGet('_pendingProfileAction');
 			if (pendingAction) {
-				// If adding a new account, link the new account to the previous
-				// account's profile family (handles family linking when the
-				// profile_family_id cookie doesn't survive the OAuth redirect).
+				// After "Add Account" OAuth, link the new account to the
+				// linked_profiles cookie so profile switching includes it.
 				if (pendingAction === 'add') {
-					const familyId = storageGet('_pendingProfileFamilyId');
-					if (familyId && _authStore.user?.authUserId) {
-						fetch('/api/profiles/link-to-family', {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({ familyId })
-						}).catch(() => {});
+					if (_authStore.user?.authUserId) {
+						void (async () => {
+							try {
+								const res = await fetch('/api/profiles/link', { method: 'POST' });
+
+								if (res.ok) {
+									storageRemove('_pendingProfileAction');
+									_authStore.notifyProfilesChanged();
+									if ($page.url.pathname !== '/profiles') {
+										await goto(resolve('/profiles'));
+									}
+								} else {
+									console.error('[layout] link failed during add flow', {
+										status: res.status,
+										sessionAuthUserId: _authStore.user?.authUserId || null
+									});
+								}
+							} catch (err) {
+								console.error('[layout] link request error during add flow', {
+									error: err,
+									sessionAuthUserId: _authStore.user?.authUserId || null
+								});
+								// Keep pending flag so we can retry on next reactive pass.
+							}
+						})();
+						return;
 					}
-					storageRemove('_pendingProfileFamilyId');
+
+					console.error('[layout] add flow missing session authUserId; clearing pending state');
+					storageRemove('_pendingProfileAction');
+					_authStore.notifyProfilesChanged();
+					if ($page.url.pathname !== '/profiles') {
+						goto(resolve('/profiles'));
+					}
+					return;
 				}
 
 				storageRemove('_pendingProfileAction');
@@ -92,6 +117,16 @@
 		if (!_authStore.isLoading && _authStore.isLoggedIn && !attemptedBackgroundSync) {
 			attemptedBackgroundSync = true;
 			void registerBackgroundSync();
+		}
+	});
+
+	// Redirect to login if user was previously signed in but now has no session
+	// (e.g. backed out of OAuth, or session expired)
+	$effect(() => {
+		if (!_authStore.isLoading && !_authStore.isLoggedIn && !_authStore.isGuest) {
+			if ($page.url.pathname !== '/') {
+				window.location.href = resolve('/');
+			}
 		}
 	});
 
