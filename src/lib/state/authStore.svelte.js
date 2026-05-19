@@ -108,6 +108,9 @@ class AuthStore {
 
 	async logout() {
 		storageRemove('_pendingProfileAction');
+		// Clear cached data so the next guest session won't mistakenly treat
+		// stale auth-session data as guest-created data.
+		this.clearGuestMode();
 		const { signOut } = await _getAuthClient();
 		await signOut({ callbackUrl: '/' });
 	}
@@ -188,6 +191,12 @@ class AuthStore {
 			console.error('[authStore] switchToProfile session refresh request error', err);
 		}
 
+		// Clear cached data for the old profile before loading the new one
+		storageRemove('todos');
+		storageRemove('archivedTodos');
+		storageRemove('customTags');
+		storageRemove('tagColors');
+
 		if (!this._reloadTodos) {
 			console.error('[authStore] switchToProfile reload callback not registered');
 		}
@@ -240,6 +249,14 @@ class AuthStore {
 	clearGuestMode() {
 		storageRemove('authMode');
 		storageRemove('_pendingProfileAction');
+		// Drop localStorage caches from the previous authenticated session so they
+		// won't be mistaken for guest-created data if the user later enters guest
+		// mode then signs back in. The data is already on the server (or a warning
+		// toast was shown if sync failed and the user chose to proceed anyway).
+		storageRemove('todos');
+		storageRemove('archivedTodos');
+		storageRemove('customTags');
+		storageRemove('tagColors');
 		this.isGuest = false;
 	}
 }

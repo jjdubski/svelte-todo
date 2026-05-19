@@ -16,22 +16,22 @@
 	/**
 	 * Show the migration dialog when:
 	 * - User is signed in (not guest)
-	 * - Has local todos in localStorage (regardless of how they got there)
-	 * - Data hasn't already been synced to server in a previous session
+	 * - Was previously in guest mode (authMode == 'guest')
+	 * - Has local todos in localStorage
 	 *
-	 * Once migration completes (sync or start fresh), we set a flag so the
-	 * dialog doesn't re-trigger on subsequent page loads (the data from the
-	 * server is cached in localStorage by the store's save effect).
+	 * Once migration completes (sync or start fresh), `clearGuestData()`
+	 * removes authMode and todo data, so the dialog won't re-trigger.
+	 *
+	 * Safety: the only way an authMode of 'guest' persists is if the user
+	 * genuinely entered guest mode. `clearGuestMode()` (called on logout
+	 * and 401 errors) clears authMode + cached data, so stale auth-session
+	 * data cannot accidentally trigger this dialog.
 	 */
 	$effect(() => {
 		if (!auth.isLoading && auth.isLoggedIn && !auth.isGuest) {
 			const wasGuest = storageGet('authMode') === 'guest';
 			const hasLocalTodos = (storageGet('todos') || []).length > 0;
-			if (wasGuest && hasLocalTodos) {
-				showMigration = true;
-			} else {
-				showMigration = false;
-			}
+			showMigration = wasGuest && hasLocalTodos;
 		}
 	});
 
