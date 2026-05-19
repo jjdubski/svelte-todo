@@ -446,6 +446,7 @@ class ThemeStore {
 
 		this._updateFavicon(accent);
 		this._updateAppleTouchIcon(accent);
+		this._updateThemeColor(lightBg, darkBg);
 	}
 
 	_generateFaviconSvg(accent) {
@@ -493,6 +494,13 @@ class ThemeStore {
 			const link = document.querySelector(`link[rel="apple-touch-icon"][sizes="${sizeAttr}x${sizeAttr}"]`);
 			if (link) link.href = dataUri;
 		}
+	}
+
+	_updateThemeColor(lightBg, darkBg) {
+		const lightMeta = document.querySelector('meta[name="theme-color"][media="(prefers-color-scheme: light)"]');
+		const darkMeta = document.querySelector('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]');
+		if (lightMeta) lightMeta.content = lightBg;
+		if (darkMeta) darkMeta.content = darkBg;
 	}
 
 	/**
